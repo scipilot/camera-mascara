@@ -11,7 +11,7 @@ import matplotlib.image as mpimg
 from tkinter import Tk 
 
 # ====== USER SETTINGS ======
-folder_path = '/Users/pip/Documents/OnePixel/projector2/patterns/Calibration'
+folder_path = '/Users/pip/Documents/OnePixel/projector/patterns/Calibration'
 
 # PORT = '/dev/cu.usbmodem101'
 PORT = pyfirmata2.Arduino.AUTODETECT

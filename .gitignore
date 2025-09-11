@@ -1,2 +1,4 @@
 .idea
 venv
+data/calibration.npz
+data/pixels.npz

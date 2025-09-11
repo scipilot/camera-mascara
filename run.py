@@ -10,18 +10,20 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 # ====== USER SETTINGS ======
-folder_path = '/Users/pip/Documents/OnePixel/projector/patterns/PixelScan_2x2_64x64'
+folder_path = '/Users/pip/Documents/OnePixel/projector/patterns/PixelScan_4x4_128x128'
+folder_path_cali = '/Users/pip/Documents/OnePixel/projector/patterns/Calibration'
 
 # PORT = '/dev/cu.usbmodem101'
 PORT = pyfirmata2.Arduino.AUTODETECT
 
-N = 64
+N = 128
 
 # ===
 
 brightness = 0.0
 samples = []
 output0 = []
+# background0 = []
 
 
 # Callback function which is called whenever there is a change at the digital port.
@@ -136,30 +138,20 @@ plt.axis('off')
 #    # board.analog[0].enable_reporting()
 
 # show dark screen to avoid initial flash
-img = mpimg.imread(os.path.join(folder_path,'pixel_0001.png'))
+img = mpimg.imread(os.path.join(folder_path,'pixel_00001.png'))
 plt.imshow(img, cmap='gray', vmin=0, vmax=1)
 plt.axis('off')
 plt.draw()
 plt.pause(3)
 # time.sleep(5)
 samples = []
+totalSamplesPerLoop = []
+totalWaits = 0
 
 # Mask display synchronised loop
 for img_path in image_files:
     # print ("loop>>")
     # LDR is super slow in low light can take 5seconds to settle from higher value!
-
-    # Make sure we have a sample to prevent div/0 ; happens every 20-30 loops?
-    if len(samples) == 0:
-        # print ("awaiting samples...")
-        time.sleep(0.01)
-    # print ("got %d" % (len(samples)))
-
-    # avg all the samples taken so far (number can vary)
-    avg = sum(samples) / len(samples)
-    samples = []
-    output0.append(avg)
-    #print("avg brightness stored: %s=%f" % (img_path, avg))
 
     # Display next mask image (pixel)
     # print(f"Displaying: {img_path}")
@@ -167,11 +159,37 @@ for img_path in image_files:
     plt.imshow(img, cmap='gray', vmin=0, vmax=1)
     plt.axis('off')
     plt.draw()
+    # Wait briefly before next image (or wait for a condition)
     plt.pause(0.01)
     # time.sleep(0.01)
-
-    # Wait briefly before next image (or wait for a condition)
     plt.clf()
+
+    # Make sure we have a sample to prevent div/0 ; happens every 20-30 loops?
+    if len(samples) == 0:
+        # print ("awaiting samples...")
+        time.sleep(0.01)
+        totalWaits = totalWaits+1
+    # print ("got %d" % (len(samples)))
+    totalSamplesPerLoop.append(len(samples))
+
+    # avg all the samples taken so far (number can vary)
+    avg = sum(samples) / len(samples)
+    output0.append(avg)
+    #print("avg brightness stored: %s=%f" % (img_path, avg))
+    samples = []
+
+    # Option: record the background level (inc projector brightness bleed)
+    # img = mpimg.imread(os.path.join(folder_path_cali,'level_000.png'))
+    # plt.imshow(img, cmap='gray', vmin=0, vmax=1)
+    # plt.axis('off')
+    # plt.draw()
+    # plt.pause(.01)
+    # plt.clf()
+    # #
+    # avg = sum(samples) / len(samples)
+    # background0.append(avg)
+    # samples = []
+
     # print ("loop<<")
 
 
@@ -186,6 +204,11 @@ plt.close()
 board.exit()
 
 print(output0)
-np.savez('/Users/pip/Documents/OnePixel/projector2/data/pixels.npz', output0=output0)
+np.savez('/Users/pip/Documents/OnePixel/projector/data/pixels.npz', output0=output0)
+
+print('Samples/pixel avg:%0.2f min:%d ma:x%d waits:%d'%(np.average(totalSamplesPerLoop), np.min(totalSamplesPerLoop), np.max(totalSamplesPerLoop), totalWaits))
+
+# print(background0)
+# print('BG samples len:%d avg:%0.2f, min:%d max:%d'%(len(background0), np.average(background0), np.min(background0), np.max(background0)))
 
 os.system( "say ooh" )

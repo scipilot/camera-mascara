@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import cv2
 
 # === Load the data ===
-data = np.load('/Users/pip/Documents/OnePixel/projector2/data/pixels.npz')  # <-- Replace with your file
+data = np.load('/Users/pip/Documents/OnePixel/projector/data/pixels.npz')  # <-- Replace with your file
 print(data.files)
 
-N = 64
+N = 128
 
 a = data['output0']
 #b = data['output1']
@@ -27,7 +27,7 @@ fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
 # == Write out the PNG
 
-cv2.imwrite('/Users/pip/Documents/OnePixel/projector2/out/PointScan.png', img_uint8)
+cv2.imwrite('/Users/pip/Documents/OnePixel/projector/out/PointScan.png', img_uint8)
 
 
 # === Display the image ===
