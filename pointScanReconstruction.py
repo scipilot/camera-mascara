@@ -1,12 +1,14 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+
+project_path = '/home/pip/CameraMascara/camera-mascara/'  # <-- Replace with your path
 
 # === Load the data ===
-data = np.load('/Users/pip/Documents/OnePixel/projector/data/pixels.npz')  # <-- Replace with your file
+data = np.load(os.path.join(project_path, 'data/pixels.npz')) 
 print(data.files)
 
-N = 128
+N = 64
 
 a = data['output0']
 #b = data['output1']
@@ -27,7 +29,7 @@ fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
 # == Write out the PNG
 
-cv2.imwrite('/Users/pip/Documents/OnePixel/projector/out/PointScan.png', img_uint8)
+plt.imsave(os.path.join(project_path, 'out/PointScan.png'), img_uint8)
 
 
 # === Display the image ===
