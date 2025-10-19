@@ -4,6 +4,7 @@ print("CAMERA MASCARA ESTA EMPESANDO...")
 print("importing OS...")
 import os
 import sys
+import math
 #import pyfirmata2
 import time
 print("importing Numpy...")
@@ -33,7 +34,6 @@ N = 64
 
 # ===
 
-brightness = 0.0
 samples = []
 output0 = []
 # background0 = []
@@ -42,7 +42,7 @@ t1 = time.time()
 def pront(str):
 	global t1
 	t2 = time.time()
-	print(	"%s %s" % (t2 - t1, str))
+	print(	"%00.4f %s" % (t2 - t1, str))
 	t1 = time.time()
 
 # Callback function which is called whenever there is a change at the digital port.
@@ -52,26 +52,56 @@ def pinCallback(value):
     else:
         print("Button down")
 
-def myPrintCallback(data):
-    global brightness
-    brightness = data
-    samples.append(data)
-    print("brightness now:%f" % (brightness	))
-
 
 pront("Connecting to the PiHat ...")
 
-# Create a new board wrapper
+# Create a new board wrapper - note it has some settings which control the ADC chip config (sample speed etc)
 board = PiHatSensor(I2CBUS)
 
+# Generate option
+# MASK generate images live =============================================
 
-# TODO convert these firmata settings to the PiHat class - sample speed, data callback
-# default sampling interval is 19ms
-#board.samplingOn(RATE)
-#digital_0.register_callback(pinCallback)
-#board.analog[0].register_callback(myPrintCallback)
+# Parameters
+M = 64 # number of pixels to scan
+R = 64 # Overall size of image
+S = 2 # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 
+# Determine the starting point for the subregion
+start_row = (M - R) // 2
+start_col = (M - R) // 2
 
+# Number of images and zero-padding digits
+num_images = R * R
+num_digits = math.ceil(math.log10(num_images + 1))
+
+# Create a blank MxM image template
+blank_image = np.zeros((M, M), dtype=np.uint8)
+
+def genImage(idx):
+    # Create a copy of the blank image
+    img = blank_image.copy()
+
+    # Calculate row and column indices within the subregion
+    sub_row = (idx - 1) // R
+    sub_col = (idx - 1) % R
+
+    # Determine absolute row and column positions
+    row = start_row + sub_row
+    col = start_col + sub_col
+
+    # Adjust the square size if near the image boundary
+    row_end = min(row + S, M)
+    col_end = min(col + S, M)
+
+    # Turn on the SxS pixel square
+    img[row:row_end, col:col_end] = 255  # Use 255 for white pixels
+
+    # Save the image
+    #imageio.imwrite(filename, img)
+
+    return img
+
+# File option
 # === MASK Load image files =======================================
 pront("Collecting mask files...")
 valid_exts = ('.jpg', '.jpeg', '.png', '.bmp')
@@ -84,91 +114,61 @@ pront("Setting up plotter...")
 # set up PyGame
 pygame.init()
 border = 0
-#h,w=480,640
 #resolution = (pygame.display.Info().current_w, pygame.display.Info().current_h)
 resolution=(N,N)
 screen = pygame.display.set_mode(resolution, pygame.SCALED | pygame.FULLSCREEN) # | pygame.RESIZABLE)
 pygame.display.set_caption("Camera Mascara")
-#screen.fill((255, 255, 255))
+screen.fill((0, 0, 0))
 surface = pygame.image.load(os.path.join(folder_path,black_image)).convert()
 screen.blit(surface,(border,border))
 pygame.display.flip()
 
 
-# RETIRED Matplotlib 
-#mpl.rcParams['toolbar'] = 'None'
-#fig = plt.figure(facecolor='black')        # Set figure background to black
-#ax = fig.add_subplot(111)                  # Create axes object
-#ax.set_facecolor('black')                  # Set axes background to black
-#
-# try to target the projector on 2nd display (note move mouse there first)
-#fig.canvas.manager.window.move(0,0)
-#
-#
-#manager = plt.get_current_fig_manager()
-#try:
-#    manager.full_screen_toggle()
-#except AttributeError:
-#    try:
-#        manager.window.showMaximized()
-#    except:
-#        pass
-#
-#plt.axis('off')
-
-
 # Script -----------
 
 pront("Show dark screen...")
-
 # show dark screen to avoid initial flash
-#img = mpimg.imread(os.path.join(folder_path,'pixel_0001.png'))
-#plt.imshow(img, cmap='gray', vmin=0, vmax=1)
-#plt.axis('off')
-#plt.draw()
-#plt.pause(3)
-# time.sleep(5)
+time.sleep(1)
 
 samples = []
 totalSamplesPerLoop = []
 totalWaits = 0
 
 # Mask display synchronised loop
-for img_path in image_files:
-    # print ("loop>>")
-    # LDR is super slow in low light can take 5seconds to settle from higher value!
-    pront("Sampling... %s"%(img_path))
-
-    sample = board.ADCReadVoltage()
-    pront('tmp sample=%s'%(sample))
-    myPrintCallback(sample)
+for img_path in image_files:				# File option
+#for idx in range(1, num_images + 1):			# Generator option
 
     # Display next mask image (pixel)
-    pront(f"Displaying: {img_path}")
-
-    # MPL
-    #img = mpimg.imread(img_path)
-    #plt.imshow(img, cmap='gray', vmin=0, vmax=1)
-    #plt.axis('off')
-    #plt.draw()
-    # Wait briefly before next image (or wait for a condition)
-    #plt.pause(0.01)
+    #pront(f"Displaying: {img_path}")
+    #pront(f"Show: {idx}")
 
     # PyGame
-    surface = pygame.image.load(img_path).convert()
+    #buffer = genImage(idx)				# Generator option
+    #pront(f"Gend: {idx}")
+    #surface = pygame.surfarray.make_surface(buffer)
+    #surface = pygame.image.frombuffer(buffer, resolution, 'P') #doesn't work
+    surface = pygame.image.load(img_path).convert() 	# File option
+    #pront(f"made: {idx}")
     screen.blit(surface,(border,border))
+    #pront(f"blitted: {idx}")
     pygame.display.flip()
+    #pront(f"flipped: {idx}")
 
-    time.sleep(0.001)
-    #plt.clf()
-    pront("Done sleep")
+    #time.sleep(0.001)
+    #pront("Done sleep")
+
+    #pront("Sampling... %s"%(img_path))
+    sample = board.ADCReadVoltage()
+    pront('  level=%0.4f %s'%(sample, img_path[-10:]))
+    #myPrintCallback(sample)
+    samples.append(sample)
 
     # Make sure we have a sample to prevent div/0 ; happens every 20-30 loops?
     if len(samples) == 0:
         pront ("awaiting samples...")
         time.sleep(0.01)
         totalWaits = totalWaits+1
-    pront ("got %d samples after %d waits" % (len(samples), totalWaits))
+    #pront ("got %d samples after %d waits" % (len(samples), totalWaits))
     totalSamplesPerLoop.append(len(samples))
 
     if len(samples) > 0:
@@ -181,28 +181,8 @@ for img_path in image_files:
         print("NO SAMPLES!")
         continue
 
-    # Option: record the background level (inc projector brightness bleed)
-    # img = mpimg.imread(os.path.join(folder_path_cali,'level_000.png'))
-    # plt.imshow(img, cmap='gray', vmin=0, vmax=1)
-    # plt.axis('off')
-    # plt.draw()
-    # plt.pause(.01)
-    # plt.clf()
-    # #
-    # avg = sum(samples) / len(samples)
-    # background0.append(avg)
-    # samples = []
-
-    # print ("loop<<")
-
 
 # === Cleanup
-#analogPrinter.stop()
-#digital_0.enable_reporting()
-#board.analog[0].disable_reporting()
-
-#plt.close()
-
 # Close the serial connection to the Arduino
 board.shutdown()
 
