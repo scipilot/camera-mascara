@@ -1,4 +1,6 @@
+import time
 from smbus2 import SMBus, i2c_msg
+import numpy as np
 
 # This wraps accessing the Pi Hat ADC via I2C
 # Note you cannot use functions like bus.write_byte_data with the ADS1110 aa they select a register which it doesn't have.
@@ -15,9 +17,25 @@ SAMPLES_PER_SECOND = 12
 class PiHatSensor:
 	def __init__(self, busno):
 		self.bus = SMBus(busno)
+		self.stdevs = []
 
 	def ADCReadVoltage(self):
 		return self.convert(self.ADCReadData())
+
+	def ADCReadVoltageAverage(self, no_samples, interval):
+		samples = []
+		for n in range(no_samples):
+			sample = self.ADCReadVoltage()
+			samples.append(sample)
+			#print(f"{n} {sample}")
+			time.sleep(interval)
+		avg = np.mean(samples)
+		self.stdevs.append(np.std(samples))
+		return avg
+
+	# Returns the [mean, stddev] of all the stdevs of each sample
+	def getStdev(self):
+		return [np.mean(self.stdevs), np.std(self.stdevs)]
 
 	def ADCReadData(self):
 		# Read 3 bytes from address  48H
