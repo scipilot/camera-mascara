@@ -1,4 +1,1 @@
-.idea
-venv
-data/calibration.npz
-data/pixels.npz
+lib/__pycache__/
