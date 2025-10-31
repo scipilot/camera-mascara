@@ -17,18 +17,20 @@ print("... imports")
 # ====== USER SETTINGS ======
 #folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_1x1_4x4'
 folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
+#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_4x4_128x128'
 #black_image = 'pixel_01.png'
 black_image = 'pixel_0001.png'
+#black_image = 'pixel_00001.png'
 folder_path_cali = '/home/pip/CameraMascara/camera-mascara/patterns/Calibration'
 data_path = '/home/pip/CameraMascara/camera-mascara/data/pixels.npz'
 
 I2CBUS = 1
 
 N = 64 # pixel w/h
-S = 2 # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
+S = 21  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 
-SAMPLE_INTERVAL = 0.001
-SAMPLES_PER_PIXEL = 8
+SAMPLE_INTERVAL = 0.005
+SAMPLES_PER_PIXEL = 1
 
 # ===
 
@@ -73,6 +75,7 @@ num_digits = math.ceil(math.log10(num_images + 1))
 
 # Create a blank MxM image template
 blank_image = np.zeros((M, M), dtype=np.uint8)
+
 
 def genImage(idx):
     # Create a copy of the blank image
@@ -133,6 +136,7 @@ time.sleep(1)
 #samples = []
 #totalSamplesPerLoop = []
 #totalWaits = 0
+tStart = time.time()
 
 # Mask display synchronised loop
 for img_path in image_files:				# File option
@@ -154,41 +158,28 @@ for img_path in image_files:				# File option
     pygame.display.flip()				# flip is slow on large screen resolutions!
     #pront(f"flipped: {idx}")
 
-    #time.sleep(0.001)
+    time.sleep(0.060)
     #pront("Done sleep")
 
     #pront("Sampling... %s"%(img_path))
-    #sample = board.ADCReadVoltage()							# OPTION: SINGLE SAMPLE
-    sample = board.ADCReadVoltageAverage(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL)		# OPTION: Average
+    #sample = board.ADCReadVoltage()						                    	# OPTION: SINGLE SAMPLE
+    #sample = board.ADCReadVoltageAverage(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL)		# OPTION: Average
+    sample = board.ADCReadNewVoltage()	                                        	# OPTION: Await new data (single sample)
     #pront('  level=%0.4f %s'%(sample, img_path[-10:]))
     #myPrintCallback(sample)
     output0.append(sample)
 
-    # Make sure we have a sample to prevent div/0 ; happens every 20-30 loops?
-    #if len(samples) == 0:
-    #    pront ("awaiting samples...")
-    #    time.sleep(0.01)
-    #    totalWaits = totalWaits+1
-    ##pront ("got %d samples after %d waits" % (len(samples), totalWaits))
-    #totalSamplesPerLoop.append(len(samples))
-    #if len(samples) > 0:
-	#    # avg all the samples taken so far (number can vary)
-	#    avg = sum(samples) / len(samples)
-	#    output0.append(avg)
-	#    #print("avg brightness stored: %s=%f" % (img_path, avg))
-	#    samples = []
-    #else:
-    #    print("NO SAMPLES!")
-    #    continue
-
+tEnd = time.time()
 
 # === Cleanup
 # get overall stats, mean of all voltage sample stdvs, and the stdev of that mean. Indicates how noisy the signal was.
-stdevs = board.getStdev()
+#stdevs = board.getStdev()
+waitss = board.getWaits()
 # Close the serial connection to the Arduino
 board.shutdown()
 
-print(output0)
+#print(output0)
 np.savez(data_path, output0=output0)
 
-print('Samples/pixel:%d interval:%f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0)))
+print('Samples/pixel:%d  (mean wait:%0.4f, stdev wait:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart))
+#print('Samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))

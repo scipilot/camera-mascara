@@ -16,7 +16,7 @@ a = data['output0']
 # === Reshape to 64x64 ===
 image0 = a.reshape((N,N))
 #image1 = b.reshape((N,N))
-print(image0)
+#print(image0)
 
 # === Rescale
 print("max:%f, min:%f" % (np.max(image0), np.min(image0)))

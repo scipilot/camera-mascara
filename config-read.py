@@ -6,7 +6,7 @@ I2CBUS = 1
 board = PiHatSensor(I2CBUS)
 
 config = board.ADCReadConfig()
-print("config:", config)
+print(f"config:{config:02x}H {config}D")
 
 # board.ADCWriteConfig()
 

@@ -68,7 +68,8 @@ pygame.mouse.set_visible(False)
 while(True):
     time.sleep(0.5)
 
-    [voltage, sample]  = board.ADCReadVoltageWithData()						# OPTION: SINGLE SAMPLE
+    #[voltage, sample]  = board.ADCReadVoltageWithData()						# OPTION: SINGLE SAMPLE
+    [voltage, sample]  = board.ADCReadNewVoltageWithData()						# OPTION: SINGLE SAMPLE await NEW data
     #sample = board.ADCReadVoltageAverage(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL)		# OPTION: Average
     #output0.append(sample)
     pront('  vin=%0.4f code=%x %x conf=%x'%(voltage, sample[0],sample[1],sample[2],))
