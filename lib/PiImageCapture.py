@@ -1,19 +1,14 @@
 #!/usr/bin/python3
-print("CAMERA MASCARA ESTA EMPESANDO...")
 
-#print("importing OS...")
 import os
 import sys
 import math
 import time
-#print("importing Numpy...")
+from datetime import datetime
 import numpy as np
-#print("importing PyGame...")
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-#print("importing PiHatSensor...")
 from lib.PiHatSensor import PiHatSensor
-print("...imports")
 
 # ====== USER SETTINGS ======
 N = 16 # pixel w/h
@@ -87,16 +82,18 @@ class PiImageCapture:
         self.screen = pygame.display.set_mode(resolution, pygame.SCALED | pygame.FULLSCREEN) # | pygame.RESIZABLE)
         pygame.display.set_caption("Camera Mascara")
         pygame.mouse.set_visible(False)
+        print("Capture ready")
 
     def dark(self):
         # show dark screen to avoid initial flash
-        pront("Show dark screen...")
+        #pront("Show dark screen...")
         self.screen.fill((0, 0, 0))
         surface = pygame.image.load(os.path.join(folder_path,black_image)).convert()
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
         
     async def run(self):
+        print("Image capture starting...")
         #samples = []
         output0 = []    
         
@@ -145,15 +142,17 @@ class PiImageCapture:
         #stdevs = board.getStdev()
         waitss = self.board.getWaits()
 
-        title = f"new pic"
+        ts = datetime.now().isoformat(sep='_', timespec='seconds') 
+        title = f"PointScan_{ts}_{N}x{N}_WR_{SAMPLES_PER_PIXEL}SPP"
                                                   
+        stats = ' Res:{N}x{N} SPP:%d wait:WR (mean wait:%0.4f, stdev wait:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
+        #stats = '  samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))
         #print(output0)
-        await self.store.store(np.array(output0), (N,N), title)
+        await self.store.store(np.array(output0), (N,N), title, stats)
         # np.savez(data_path, output0=output0)
 
-        print('Samples/pixel:%d  (mean wait:%0.4f, stdev wait:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart))
-        #print('Samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))
-
+        print(stats)
+        print("Image capture complete ----------------")
 
     def stop():
         # Close the serial connection to the Arduino

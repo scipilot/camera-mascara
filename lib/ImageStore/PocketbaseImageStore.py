@@ -28,7 +28,7 @@ class PocketbaseImageStore:   # (ImageStore)
     #def __init(self):
 
     # ouput is the image data array
-    async def store(self, output, dims, title):
+    async def store(self, output, dims, title, stats):
         pb = await self.connect()
         
         # Get the collection instance we can work with
@@ -53,7 +53,9 @@ class PocketbaseImageStore:   # (ImageStore)
         # open() or any io stream object. It uses httpx under the hood.
         record = await collection.create(
             params={
+                "created": datetime.now(),
                 "title": title,
+                "stats": stats,
                 "data": FileUpload((f"{title}.npz", npz )),
                 "image": FileUpload((f"{title}.png", img )),
             }
@@ -70,6 +72,11 @@ class PocketbaseImageStore:   # (ImageStore)
     # once-off - set up the database structure
     async def setup(self):
         pb = await self.connect()
+
+        # TODO first remove an existing collection
+        #collection = pb.collection("images")
+        #await pb.collections.delete(collection["id"])
+
         # Create a collection to s"tore records in
         # It is a base collection (not "view" or "auth") with one column "content"
         # and it will have the regular "id" column.
@@ -80,9 +87,19 @@ class PocketbaseImageStore:   # (ImageStore)
                     "type": "base",
                     "fields": [
                         {
+                            "name": "created",
+                            "type": "date",
+                            "required": True,
+                        },
+                        {
                             "name": "title",
                             "type": "text",
                             "required": True,
+                        },
+                        {
+                            "name": "stats",
+                            "type": "text",
+                            "required": False,
                         },
                         {
                             "name": "data",

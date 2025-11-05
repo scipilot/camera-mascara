@@ -43,8 +43,8 @@ async def callback(event: RealtimeEvent) -> None:
     # This will get called for every event
     # Lets print what is going on
     at = datetime.now().isoformat()
-    print(f"[{at}] {event['action'].upper()}: {event['record']}")
-    
+    #print(f"[{at}] {event['action'].upper()}: {event['record']}")
+    print("Pocketbase subscriber is running the image scan...")
     await pic.run()
 
 
@@ -54,24 +54,26 @@ async def realtime_updates():
     unsubscribe = None
 
     try:
-        print("# Instantiate the PocketBase connector")
+        # Instantiate the PocketBase connector
         pb = PocketBase(CONNECTION_URL)
 
-        print(f"# Authenticate as a superuser {SUPERUSER_EMAIL}  {SUPERUSER_PASSWORD}")
+        # Authenticate as a superuser
         await pb.collection("_superusers").auth.with_password(username_or_email=SUPERUSER_EMAIL, password=SUPERUSER_PASSWORD)
 
-        print("# Get the collection object")
+        # Get the collection object
         col = pb.collection(COLLECTION_NAME)
 
-        print("# Subscribe to Realtime events for the specific record ID in the collection")
+        # Subscribe to Realtime events for the specific record ID in the collection
         unsubscribe = await col.subscribe_all(callback=callback)
 
-        print("# Infinite loop to wait for events (adjusted from the second snippet)")
+        print("Pocketbase subsciber is ready")
+
+        # Infinite loop to wait for events (adjusted from the second snippet)
         while True:
             await asyncio.sleep(60 * 60)  # Sleep for an hour to avoid hitting PocketBase's rate limits")
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in Pocketbase subscriber: {e}")
 
     finally:
         # Unsubscribe if still active
