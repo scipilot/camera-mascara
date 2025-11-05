@@ -36,7 +36,7 @@ SC_SING = 1
 
 # CURRENT COFIG
 DR = DR_15SPS
-PGA = PGA_GAIN_4
+PGA = PGA_GAIN_8
 SC = SC_CONT  
 
 class PiHatSensor:
