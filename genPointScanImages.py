@@ -4,9 +4,9 @@ import os
 import math
 
 # Parameters
-M = 4 # number of pixels to scan
-R = 4 # Overall size of image
-S = 1 # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
+M = 16 # number of pixels to scan
+R = 16 # Overall size of image
+S = 2 # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 file_dir = "patterns/PixelScan_%dx%d_%dx%d/" % (S,S,M,R) # where to save images
 
 # Ensure the output directory exists
@@ -47,3 +47,8 @@ for idx in range(1, num_images + 1):
 
     # Save the image
     imageio.imwrite(filename, img)
+
+# Also write out a black image for preparing the sensor
+    filename = os.path.join(file_dir, f'black.png')
+    imageio.imwrite(filename, blank_image)
+

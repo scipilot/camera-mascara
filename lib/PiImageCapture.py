@@ -16,19 +16,25 @@ from lib.PiHatSensor import PiHatSensor
 print("...imports")
 
 # ====== USER SETTINGS ======
+N = 16 # pixel w/h
+S = 2  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
+
+folder_path = f'/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_{S}x{S}_{N}x{N}'
+black_image = 'black.png'
+
 #folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_1x1_4x4'
-folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
-#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_4x4_128x128'
 #black_image = 'pixel_01.png'
-black_image = 'pixel_0001.png'
+#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_16x16'
+#black_image = 'pixel_001.png'
+#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
+#black_image = 'pixel_0001.png'
+#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_4x4_128x128'
 #black_image = 'pixel_00001.png'
 folder_path_cali = '/home/pip/CameraMascara/camera-mascara/patterns/Calibration'
 data_path = '/home/pip/CameraMascara/camera-mascara/data/pixels.npz'
 
 I2CBUS = 1
 
-N = 64 # pixel w/h
-S = 2  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 
 SAMPLE_INTERVAL = 0.005
 SAMPLES_PER_PIXEL = 1
@@ -69,7 +75,7 @@ class PiImageCapture:
         valid_exts = ('.jpg', '.jpeg', '.png', '.bmp')
         self.image_files = [os.path.join(folder_path, f)
                        for f in sorted(os.listdir(folder_path))
-                       if f.lower().endswith(valid_exts)]
+                       if f.lower().endswith(valid_exts) and f.lower() != black_image]
 
         # Projector ----
         pront("Setting up plotter...")
@@ -80,25 +86,23 @@ class PiImageCapture:
         resolution=(N,N)
         self.screen = pygame.display.set_mode(resolution, pygame.SCALED | pygame.FULLSCREEN) # | pygame.RESIZABLE)
         pygame.display.set_caption("Camera Mascara")
+        pygame.mouse.set_visible(False)
 
+    def dark(self):
         # show dark screen to avoid initial flash
         pront("Show dark screen...")
         self.screen.fill((0, 0, 0))
-        pygame.mouse.set_visible(False)
         surface = pygame.image.load(os.path.join(folder_path,black_image)).convert()
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
-
-
-        # Script -----------
+        
     async def run(self):
         #samples = []
         output0 = []    
+        
+        self.dark()
         time.sleep(1)
 
-        #samples = []
-        #totalSamplesPerLoop = []
-        #totalWaits = 0
         tStart = time.time()
 
         # Mask display synchronised loop
@@ -118,9 +122,10 @@ class PiImageCapture:
             #pront(f"made: {idx}")
             self.screen.blit(surface,(border,border))
             #pront(f"blitted: {idx}")
-            pygame.display.flip()				# flip is slow on large screen resolutions!
+            pygame.display.flip()				# flip is slow on large screen resolutions! so set the desktop to 640x480
             #pront(f"flipped: {idx}")
 
+            # At 15SPS is 0.066s fastest possible case, so sleep for 60 as the code takes some time anyway (tune via the stats)
             time.sleep(0.060)
             #pront("Done sleep")
 
@@ -129,17 +134,16 @@ class PiImageCapture:
             #sample = board.ADCReadVoltageAverage(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL)		# OPTION: Average
             sample = self.board.ADCReadNewVoltage()	                                        	# OPTION: Await new data (single sample)
             #pront('  level=%0.4f %s'%(sample, img_path[-10:]))
-            #myPrintCallback(sample)
             output0.append(sample)
 
+        
+        self.dark()
         tEnd = time.time()
 
         # === Cleanup
         # get overall stats, mean of all voltage sample stdvs, and the stdev of that mean. Indicates how noisy the signal was.
         #stdevs = board.getStdev()
         waitss = self.board.getWaits()
-        # Close the serial connection to the Arduino
-        self.board.shutdown()
 
         title = f"new pic"
                                                   
@@ -149,3 +153,9 @@ class PiImageCapture:
 
         print('Samples/pixel:%d  (mean wait:%0.4f, stdev wait:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart))
         #print('Samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))
+
+
+    def stop():
+        # Close the serial connection to the Arduino
+        self.board.shutdown()
+        
