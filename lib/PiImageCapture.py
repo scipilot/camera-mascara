@@ -10,29 +10,19 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from lib.PiHatSensor import PiHatSensor
 
-# ====== USER SETTINGS ======
-N = 16 # pixel w/h
-S = 2  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
+# ====== DEFAULT SETTINGS ======
+#N = 16 # pixel w/h
+#S = 2  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 
-folder_path = f'/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_{S}x{S}_{N}x{N}'
-black_image = 'black.png'
-
-#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_1x1_4x4'
-#black_image = 'pixel_01.png'
-#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_16x16'
-#black_image = 'pixel_001.png'
-#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
-#black_image = 'pixel_0001.png'
-#folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_4x4_128x128'
-#black_image = 'pixel_00001.png'
-folder_path_cali = '/home/pip/CameraMascara/camera-mascara/patterns/Calibration'
-data_path = '/home/pip/CameraMascara/camera-mascara/data/pixels.npz'
+base_path = '/home/pip/CameraMascara/camera-mascara'
+folder_path_cali = f'{base_path}/patterns/Calibration'
+data_path = f'{base_path}/data/pixels.npz'
 
 I2CBUS = 1
 
 
 SAMPLE_INTERVAL = 0.005
-SAMPLES_PER_PIXEL = 1
+SAMPLES_PER_PIXEL = 1 # TODO Not yet re-implemented in the new sampler...
 
 border = 0
 
@@ -64,34 +54,40 @@ class PiImageCapture:
         pront("Connecting to the PiHat ...")
         self.board = PiHatSensor(I2CBUS)
 
-        # File option
-        # === MASK Load image files =======================================
-        pront("Collecting mask files...")
-        valid_exts = ('.jpg', '.jpeg', '.png', '.bmp')
-        self.image_files = [os.path.join(folder_path, f)
-                       for f in sorted(os.listdir(folder_path))
-                       if f.lower().endswith(valid_exts) and f.lower() != black_image]
-
-        # Projector ----
-        pront("Setting up plotter...")
-
         # set up PyGame
         pygame.init()
-        #resolution = (pygame.display.Info().current_w, pygame.display.Info().current_h)
-        resolution=(N,N)
-        self.screen = pygame.display.set_mode(resolution, pygame.SCALED | pygame.FULLSCREEN) # | pygame.RESIZABLE)
-        pygame.display.set_caption("Camera Mascara")
-        pygame.mouse.set_visible(False)
+ 
         print("Capture ready")
 
     def dark(self):
         # show dark screen to avoid initial flash
         #pront("Show dark screen...")
         self.screen.fill((0, 0, 0))
-        surface = pygame.image.load(os.path.join(folder_path,black_image)).convert()
+        surface = pygame.image.load(os.path.join(self.folder_path,self.black_image)).convert()
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
         
+    def configure(self, image_size, mask_pixel_size):
+        print(f"Image capture configure... {image_size}, {mask_pixel_size}")
+        self.N = image_size
+        self.S = mask_pixel_size
+        self.folder_path = f'{base_path}/patterns/PixelScan_{self.S}x{self.S}_{self.N}x{self.N}'
+        self.black_image = 'black.png'
+        
+        # === MASK Load image files =======================================
+        pront("Collecting mask files...")
+        valid_exts = ('.jpg', '.jpeg', '.png', '.bmp')
+        self.image_files = [os.path.join(self.folder_path, f)
+                       for f in sorted(os.listdir(self.folder_path))
+                       if f.lower().endswith(valid_exts) and f.lower() != self.black_image]
+        
+        # set up PyGame
+        #resolution = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+        resolution=(self.N, self.N) 
+        self.screen = pygame.display.set_mode(resolution, pygame.SCALED | pygame.FULLSCREEN) # | pygame.RESIZABLE)
+        pygame.display.set_caption("Camera Mascara")
+        pygame.mouse.set_visible(False)
+
     async def run(self):
         print("Image capture starting...")
         #samples = []
@@ -143,12 +139,12 @@ class PiImageCapture:
         waitss = self.board.getWaits()
 
         ts = datetime.now().isoformat(sep='_', timespec='seconds') 
-        title = f"PointScan_{ts}_{N}x{N}_WR_{SAMPLES_PER_PIXEL}SPP"
+        title = f"PointScan_{ts}_{self.N}x{self.N}_{self.S}x{self.S}_WR_{SAMPLES_PER_PIXEL}SPP"
                                                   
-        stats = ' Res:{N}x{N} SPP:%d wait:WR (mean wait:%0.4f, stdev wait:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
+        stats = 'Resol:%dx%d Pixel:%dx%d SPP:%d Wait:WR (mean wait:%0.4f s, stdev wait:%0.4f s) LVL-min:%0.4f max:%0.4f Took:%d s'%(self.N,self.N, self.S,self.S, SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
         #stats = '  samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))
         #print(output0)
-        await self.store.store(np.array(output0), (N,N), title, stats)
+        await self.store.store(np.array(output0), (self.N,self.N), title, stats)
         # np.savez(data_path, output0=output0)
 
         print(stats)

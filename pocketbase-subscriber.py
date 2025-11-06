@@ -43,8 +43,9 @@ async def callback(event: RealtimeEvent) -> None:
     # This will get called for every event
     # Lets print what is going on
     at = datetime.now().isoformat()
-    #print(f"[{at}] {event['action'].upper()}: {event['record']}")
-    print("Pocketbase subscriber is running the image scan...")
+    print(f"[{at}] {event['action'].upper()}: {event['record']}")
+    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']}")
+    pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'])
     await pic.run()
 
 
