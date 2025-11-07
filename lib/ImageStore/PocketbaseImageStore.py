@@ -7,19 +7,14 @@ from pocketbase import PocketBase, PocketBaseError, FileUpload
 from pocketbase.models.dtos import RealtimeEvent
 from dotenv import load_dotenv
 from lib.ImageRender import ImageRender
-
-load_dotenv()
-CONNECTION_URL = os.getenv('POCKETBASE_CONNECTION_URL')
-SUPERUSER_EMAIL = os.getenv('POCKETBASE_SUPERUSER_EMAIL')
-SUPERUSER_PASSWORD = os.getenv('POCKETBASE_SUPERUSER_PASSWORD')
-print(f"# env {CONNECTION_URL} {SUPERUSER_EMAIL}")
+from lib.Pocketbase.Connector import Connector
 
 COLLECTION_NAME = "images"
 
 
 # Strategy : Numpy save NPZ file 
 class PocketbaseImageStore:   # (ImageStore)
-    def __ini(self, connector: PocketbaseConnector):
+    def __init__(self, connector: Connector):
         self.connector = connector 
     
     # ouput is the image data array

@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 from lib.PiImageCapture import PiImageCapture
 from lib.ImageStore import NPZImageStore
 from lib.ImageStore.PocketbaseImageStore import PocketbaseImageStore
-from lib.Pocketbase.PocketbaseConnector import PocketbaseConnector 
+from lib.Pocketbase.Connector import Connector 
 
-connector = PocketbaseConnector()
+connector = Connector()
 
 # Storage Strategy 1 - save data in NPZ file
 #data_path = '/home/pip/CameraMascara/camera-mascara/data/pixels.npz'
@@ -62,7 +62,7 @@ async def realtime_updates():
         #pb = PocketBase(CONNECTION_URL)
         # Authenticate as a superuser
         #await pb.collection("_superusers").auth.with_password(username_or_email=SUPERUSER_EMAIL, password=SUPERUSER_PASSWORD)
-        pb = connector.connect()
+        pb = await connector.connect()
 
         # Get the collection object
         col = pb.collection(COLLECTION_NAME)

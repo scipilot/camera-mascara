@@ -1,18 +1,14 @@
 #!/usr/bin/python3
 print("LIGHT METER...")
 
-print("importing OS...")
 import os
 import sys
 import math
 import time
-print("importing Numpy...")
 import numpy as np
-print("importing PyGame...")
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-print("importing PiHatSensor...")
 from lib.PiHatSensor import PiHatSensor
-print("... imports")
 
 # ====== USER SETTINGS ======
 folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'

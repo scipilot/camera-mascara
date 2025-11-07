@@ -67,7 +67,7 @@ class PiImageCapture:
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
         
-    def configure(self, image_size, mask_pixel_size):
+    async def configure(self, image_size, mask_pixel_size):
         print(f"Image capture configure... {image_size}, {mask_pixel_size}")
         self.N = image_size
         self.S = mask_pixel_size

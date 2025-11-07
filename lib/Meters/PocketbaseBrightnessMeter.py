@@ -9,12 +9,14 @@ class PocketbaseBrightnessMeter:
     def __init__(self, connector: Connector):
         self.connector = connector
 
+    async def init(self):
+        self.pb = await self.connector.connect()
+    
     # brighrness is the current voltage level
     async def record(self, device_id, brightness):
-        self.pb = await self.connector.connect()
         collection = self.pb.collection(COLLECTION_NAME)
 
         updated = await collection.update(record_id=device_id, params={"brightness": brightness})
-        print(updated)
+        #print(updated)
 
 
