@@ -1,0 +1,17 @@
+[Unit]
+Description = pocketbase
+
+[Service]
+Type             = simple
+User             = root
+Group            = root
+LimitNOFILE      = 4096
+Restart          = always
+RestartSec       = 5s
+StandardOutput   = append:/usr/local/pocketbase/std.log
+StandardError    = append:/usr/local/pocketbase/std.log
+WorkingDirectory = /usr/local/pocketbase
+ExecStart        = /usr/local/pocketbase/base serve --http="0.0.0.0:8090"
+
+[Install]
+WantedBy = multi-user.target

@@ -14,9 +14,11 @@ class Connector:
     #def __init(self):
 
     async def connect(self):
+        print (f"Connecting to Pocketbase on {CONNECTION_URL}...")
         # Instantiate the PocketBase connector
         pb = PocketBase(CONNECTION_URL)
         # Authenticate as a superuser
+        print (f"Authenticating to Pocketbase as {SUPERUSER_EMAIL}...")
         await pb.collection("_superusers").auth.with_password(SUPERUSER_EMAIL, SUPERUSER_PASSWORD)
         return pb
 

@@ -1,0 +1,17 @@
+[Unit]
+Description = mascara-pocketbase
+
+[Service]
+Type             = simple
+User             = root
+Group            = root
+LimitNOFILE      = 4096
+Restart          = always
+RestartSec       = 20s
+StandardOutput   = append:/usr/local/mascara-pocketbase/std.log
+StandardError    = append:/usr/local/mascara-pocketbase/std.log
+WorkingDirectory = /home/pip/CameraMascara/camera-mascara
+ExecStart        = /home/pip/CameraMascara/venv/bin/python /home/pip/CameraMascara/camera-mascara/pocketbase-subscriber.py
+
+[Install]
+WantedBy = multi-user.target

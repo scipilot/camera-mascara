@@ -1,3 +1,4 @@
+print("Pocketbase subsciber is starting...")
 import asyncio
 import os
 from datetime import datetime
