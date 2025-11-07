@@ -10,6 +10,8 @@ from lib.PiImageCapture import PiImageCapture
 from lib.ImageStore import NPZImageStore
 from lib.ImageStore.PocketbaseImageStore import PocketbaseImageStore
 from lib.Pocketbase.Connector import Connector 
+from lib.PiLightMeter import PiLightMeter
+from lib.Meters.PocketbaseBrightnessMeter import  PocketbaseBrightnessMeter
 
 connector = Connector()
 
@@ -22,13 +24,21 @@ store = PocketbaseImageStore(connector)
 
 pic = PiImageCapture(store)
 
+
+# Storage Strategy 1 -  log?
+
+# Storage Strategy 2 - save output into Pocketbase for GUI and API
+meter = PocketbaseBrightnessMeter(connector)
+plm = PiLightMeter(meter)
+
+
 # ENV - copy and fill in:  "cp dotenv-default .env.local"
 load_dotenv()
 # eg.
 #CONNECTION_URL = "http://10.200.72.143:8090"
 #SUPERUSER_EMAIL = "admin@pocketbase.local"
 #SUPERUSER_PASSWORD = "pocketbasepassword"
-COLLECTION_NAME = "posts"
+COLLECTION_NAME = "jobs"
 #
 CONNECTION_URL = os.getenv('POCKETBASE_CONNECTION_URL')
 SUPERUSER_EMAIL = os.getenv('POCKETBASE_SUPERUSER_EMAIL')
@@ -44,14 +54,47 @@ async def callback(event: RealtimeEvent) -> None:
         event (RealtimeEvent): The event object containing information about the record change.
     """
     # This will get called for every event
-    # Lets print what is going on
     at = datetime.now().isoformat()
     print(f"[{at}] {event['action'].upper()}: {event['record']}")
+    # onky service "requests" as the record is updated by the job itself (and would recurse!)
+    if event['record']['state'] == 'requested':
+        if event['record']['job'] == 'capture':
+            await handleCapture(event)
+        elif event['record']['job'] == 'meter':
+            await handleMeter(event)
+
+async def handleCapture(event: RealtimeEvent) -> None:
     print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']}")
-    pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'])
+    await pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'])
+    await update_job(event, "running")
     await pic.run()
+    await update_job(event, "ended")
 
 
+async def handleMeter(event: RealtimeEvent) -> None:
+    print(f"Pocketbase subscriber is running the meter     ... {event['record']['camera']}")
+    #await update_job(event, "starting")
+    await plm.configure(device=event["record"]["camera"])
+    await update_job(event, "running")
+    await plm.run()
+    await update_job(event, "ended")
+
+
+async def update_job(event: RealtimeEvent, state):
+    pb = await connector.connect()
+    col = pb.collection(COLLECTION_NAME)
+    updated = await col.update(record_id=event["record"]["id"], params={"state": state})
+    # also update the client denormalisation
+    await update_client(pb, event, state)
+
+async def update_client(pb, event: RealtimeEvent, state):
+    if state == "ended":
+        # remove the job from this device
+        setJob = ""
+    else: 
+        setJob = event["record"]["id"]
+    col = pb.collection("cameras")
+    updated = await col.update(record_id=event["record"]["camera"], params={"job": setJob})
 
 async def realtime_updates():
     """Establishes a PocketBase connection, authenticates, and subscribes to Realtime events."""
