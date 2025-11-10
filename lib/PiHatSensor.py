@@ -1,4 +1,5 @@
 import time
+from dataclasses import dataclass
 from smbus2 import SMBus, i2c_msg
 import numpy as np
 
@@ -36,8 +37,31 @@ SC_SING = 1
 
 # CURRENT COFIG
 DR = DR_15SPS
-PGA = PGA_GAIN_8
+PGA = PGA_GAIN_2
 SC = SC_CONT  
+
+# PGA is the masked setting (0,1,2,3) and PGA-VALUE is the actual gain 1,2,4,8
+PGA_VALUES = {
+    0: 1,
+    1: 2,
+    2: 4,
+    3: 8,
+}
+# DR is the masked setting (12,8,4,6), and DR_values is the actual samples per second (15,30,60,120)
+DR_VALUES = {
+   12: 15,
+    8: 30,
+    4: 60,
+    0: 240,
+}
+
+@dataclass
+class ConfigStruct:
+    """ Represents the ADC configuration, externally only the _values are used  """
+    PGA: int = 1            # 0,  1,  2,  3
+    PGA_value: int = 1      # 1,  2,  4,  8
+    SPS: int = 12           # 12,  8,  4,  0
+    SPS_value: int = 15     # 15, 30, 60, 240
 
 class PiHatSensor:
     def __init__(self, busno):
@@ -112,6 +136,13 @@ class PiHatSensor:
         data = self.ADCReadData()
         return data[2]
 
+    def ADCReadConfigStruct(self):
+        conf = self.ADCReadConfig()
+        PGA = conf & 0b11 << CFG_PGA2
+        DR = conf & 0b11 << CFG_DR2
+        print("conf byte 0x%x %d PGA=%d SPS=%d"%(conf, conf, PGA, DR))
+        return ConfigStruct(PGA=PGA, PGA_value=PGA_VALUES[PGA], SPS=DR, SPS_value=DR_VALUES[DR])
+
     def ADCWriteConfig(self):
         # TODO calculate config from settings!
         conf = PGA | (DR << 2) | (SC <<4)
@@ -125,17 +156,18 @@ class PiHatSensor:
     # Note the config could be parsed right now to get the settings
     def convert(self, bytes):
         #print("convert bytes %d %d"%(bytes[0], bytes[1]))
-        out = bytes[0] * 255 + bytes[1]
+        out = bytes[0] * 256 + bytes[1]
 
         # Convert from two's complement (0-7FFF is the positive range, 8000-FFFF is the negatve range)
-                                     #print("  twos   out:%d"%(out))
+        #print("  twos   out:%x %d"%(out, out))
         out = unsignedToSigned(out, 2)
         #print("  signed out:%d"%(out))
 
         # Recalculate VIN from the output code equation in the datasheet
         # Output Code = −1 x Min Code x PGA x ( (VIN+ - VIN-) / 2.048V )
         # VIN+ = ( Output Code * MAXV / (−1 x Min Code x PGA)) + VIN-
-        vin = (out * MAX_V / ( -1 * MIN_CODE * PGA)) + VIN_NEG
+        vin = (out * MAX_V / ( -1 * MIN_CODE * PGA_VALUES[PGA])) + VIN_NEG
+        #print(f"{vin} = ({out} * {MAX_V} / ( -1 * {MIN_CODE} * {PGA_VALUES[PGA]})) + {VIN_NEG} ")
         return vin
 
 

@@ -1,4 +1,4 @@
-print("Pocketbase subsciber is starting...")
+print("Pocketbase subscriber is starting...")
 import asyncio
 import os
 from datetime import datetime
@@ -13,6 +13,8 @@ from lib.ImageStore.PocketbaseImageStore import PocketbaseImageStore
 from lib.Pocketbase.Connector import Connector 
 from lib.PiLightMeter import PiLightMeter
 from lib.Meters.PocketbaseBrightnessMeter import  PocketbaseBrightnessMeter
+from lib.ConfigStore.PocketbaseConfigStore import PocketbaseConfigStore
+from lib.PiConfig import PiConfig
 
 connector = Connector()
 
@@ -22,9 +24,10 @@ connector = Connector()
 
 # Storage Strategy 2 - save output into Pocketbase for GUI and API
 store = PocketbaseImageStore(connector) 
-
 pic = PiImageCapture(store)
 
+confStore = PocketbaseConfigStore(connector)
+pc = PiConfig(confStore)
 
 # Storage Strategy 1 -  log?
 
@@ -63,9 +66,13 @@ async def callback(event: RealtimeEvent) -> None:
             await handleCapture(event)
         elif event['record']['job'] == 'meter':
             await handleMeter(event)
+        elif event['record']['job'] == 'adc.config.read':
+            await handleADCConfigRead(event)
+        else:
+            print(f"Unknown job { event['record']['job'] }")
 
 async def handleCapture(event: RealtimeEvent) -> None:
-    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']}")
+    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']} for {event['record']['camera']}")
     await pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'])
     await update_job(event, "running")
     await pic.run()
@@ -73,11 +80,17 @@ async def handleCapture(event: RealtimeEvent) -> None:
 
 
 async def handleMeter(event: RealtimeEvent) -> None:
-    print(f"Pocketbase subscriber is running the meter     ... {event['record']['camera']}")
+    print(f"Pocketbase subscriber is running the meter for {event['record']['camera']}")
     #await update_job(event, "starting")
     await plm.configure(device=event["record"]["camera"])
     await update_job(event, "running")
     await plm.run()
+    await update_job(event, "ended")
+
+async def handleADCConfigRead(event: RealtimeEvent) -> None:
+    print(f"Pocketbase subscriber is running the handleADCConfigRead  for {event['record']['camera']}")
+    await update_job(event, "running")
+    await pc.read(device=event["record"]["camera"])
     await update_job(event, "ended")
 
 
@@ -129,7 +142,7 @@ async def realtime_updates():
             try:
                 await unsubscribe()
             except Exception as e:
-                print(f"Error unsubscribing: {e}")
+                print(f"Error in Pocketbase subscriber: unsubscribing: {e}")
 
 
 if __name__ == "__main__":
