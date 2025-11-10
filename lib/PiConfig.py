@@ -40,10 +40,11 @@ class PiConfig:
         print(f"PiConfig fetched config for {device}: {cs}")
         await self.store.store(device, cs.PGA_value, cs.SPS_value)
 
-    async def write(self, device, PGA, SPS):
-        print(f"PI configure: {ID}, {PGA}, {SPS}")
-        device = await self.store.fetch(ID, cs.PGA_value, cs.SPS_value), 
-        self.board.setConfigValues(PGA_value=PGA, SPS_value=SPS) 
+    async def write(self, device, pga_value, sps_value):
+        print(f"PI configure: {device}, {pga_value}, {sps_value}")
+        #device = await self.store.fetch(ID, cs.PGA_value, cs.SPS_value), 
+        self.board.ADCWriteConfigValues(PGA_value=pga_value, SPS_value=sps_value) 
+        await self.store.store(device, pga_value, sps_value)
 
     def stop():
         # Close the serial connection to the Arduino

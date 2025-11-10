@@ -35,9 +35,9 @@ PGA_GAIN_8 = 0b11
 SC_CONT = 0
 SC_SING = 1
 
-# CURRENT COFIG
-DR = DR_15SPS
-PGA = PGA_GAIN_2
+# CURRENT COFIG - now in self
+#DR = DR_15SPS
+#PGA = PGA_GAIN_2
 SC = SC_CONT  
 
 # PGA is the masked setting (0,1,2,3) and PGA-VALUE is the actual gain 1,2,4,8
@@ -47,12 +47,28 @@ PGA_VALUES = {
     2: 4,
     3: 8,
 }
+#TODO - this isn't consistent now! either bitmask the values in position OR shift into place. I'm currently doing a mix of both!
 # DR is the masked setting (12,8,4,6), and DR_values is the actual samples per second (15,30,60,120)
 DR_VALUES = {
    12: 15,
     8: 30,
     4: 60,
     0: 240,
+}
+
+# inverse mapping 
+PGA_OPTIONS = {
+    '1': 0,
+    '2': 1,
+    '4': 2,
+    '8': 3,
+}
+# inverse mapping
+DR_OPTIONS = {
+    '15':  3,
+    '30':  2,
+    '60':  1,
+    '240': 0,
 }
 
 @dataclass
@@ -63,11 +79,20 @@ class ConfigStruct:
     SPS: int = 12           # 12,  8,  4,  0
     SPS_value: int = 15     # 15, 30, 60, 240
 
+""" After instantiating, you should call selfConfigure to set the local parameters to match the ADC chip. (Or WriteConfig will do the same.)  """
 class PiHatSensor:
     def __init__(self, busno):
         self.bus = SMBus(busno)
         self.stdevs = []
         self.waits = []
+        self.PGA = 0
+        self.DR = 0
+
+    def selfConfigure(self):
+        """Configures this object instance parameters from the ADC chip config"""
+        cs = self.ADCReadConfigStruct()
+        self.PGA = cs.PGA
+        self.DR = cs.SPS
 
     def ADCReadVoltage(self):
         return self.convert(self.ADCReadData())
@@ -86,10 +111,10 @@ class PiHatSensor:
         return [voltage, sample]
 
     def getConfig(self):
-        return [PGA, MIN_CODE, MAX_V, VIN_NEG, SAMPLES_PER_SECOND]
+        return [self.PGA, MIN_CODE, MAX_V, VIN_NEG, self.DR]
 
     def printConfig(self):
-        print(f"PGA={PGA}, MIN_CODE={MIN_CODE}, MAX_V={MAX_V}, VIN_NEG={VIN_NEG}, SAMPLES_PER_SECOND={SAMPLES_PER_SECOND}")
+        print(f"PGA={self.PGA}, MIN_CODE={MIN_CODE}, MAX_V={MAX_V}, VIN_NEG={VIN_NEG}, DR={self.DR}")
 
     def ADCReadVoltageAverage(self, no_samples, interval):
         samples = []
@@ -137,16 +162,25 @@ class PiHatSensor:
         return data[2]
 
     def ADCReadConfigStruct(self):
+        """Reads the ADC config and returns it as a Config structure, does not sync the local params"""
         conf = self.ADCReadConfig()
         PGA = conf & 0b11 << CFG_PGA2
         DR = conf & 0b11 << CFG_DR2
-        print("conf byte 0x%x %d PGA=%d SPS=%d"%(conf, conf, PGA, DR))
+        print("read conf byte 0x%x %d PGA=#%d DR=#%d"%(conf, conf, PGA, DR))
         return ConfigStruct(PGA=PGA, PGA_value=PGA_VALUES[PGA], SPS=DR, SPS_value=DR_VALUES[DR])
 
-    def ADCWriteConfig(self):
-        # TODO calculate config from settings!
-        conf = PGA | (DR << 2) | (SC <<4)
-        print(f"conf={conf:02x}H")
+    #def ADCWriteConfig(self):
+    #    # TODO calculate config from settings!
+    #    conf = PGA | (DR << 2) | (SC <<4)
+    #    print(f"write H/C conf={conf:02x}H")
+    #    self.bus.write_byte(addr, conf)
+
+    def ADCWriteConfigValues(self, PGA_value, SPS_value):
+        """ Updates the ADC chip config, and syncs the local params """
+        self.PGA = PGA_OPTIONS[PGA_value]
+        self.DR = DR_OPTIONS[SPS_value]
+        conf = self.PGA | (self.DR << 2) | (SC <<4)
+        print(f"write PGA={self.PGA} DR={self.DR} SC={SC} conf={conf:02x}H")
         self.bus.write_byte(addr, conf)
 
     def shutdown(self):
@@ -166,8 +200,8 @@ class PiHatSensor:
         # Recalculate VIN from the output code equation in the datasheet
         # Output Code = −1 x Min Code x PGA x ( (VIN+ - VIN-) / 2.048V )
         # VIN+ = ( Output Code * MAXV / (−1 x Min Code x PGA)) + VIN-
-        vin = (out * MAX_V / ( -1 * MIN_CODE * PGA_VALUES[PGA])) + VIN_NEG
-        #print(f"{vin} = ({out} * {MAX_V} / ( -1 * {MIN_CODE} * {PGA_VALUES[PGA]})) + {VIN_NEG} ")
+        vin = (out * MAX_V / ( -1 * MIN_CODE * PGA_VALUES[self.PGA])) + VIN_NEG
+        #print(f"{vin} = ({out} * {MAX_V} / ( -1 * {MIN_CODE} * {PGA_VALUES[self.PGA]})) + {VIN_NEG} ")
         return vin
 
 

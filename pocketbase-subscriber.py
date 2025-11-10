@@ -68,6 +68,8 @@ async def callback(event: RealtimeEvent) -> None:
             await handleMeter(event)
         elif event['record']['job'] == 'adc.config.read':
             await handleADCConfigRead(event)
+        elif event['record']['job'] == 'adc.config.write':
+            await handleADCConfigWrite(event)
         else:
             print(f"Unknown job { event['record']['job'] }")
 
@@ -88,9 +90,15 @@ async def handleMeter(event: RealtimeEvent) -> None:
     await update_job(event, "ended")
 
 async def handleADCConfigRead(event: RealtimeEvent) -> None:
-    print(f"Pocketbase subscriber is running the handleADCConfigRead  for {event['record']['camera']}")
+    print(f"Pocketbase subscriber is running the handleADCConfigRead for {event['record']['camera']}")
     await update_job(event, "running")
     await pc.read(device=event["record"]["camera"])
+    await update_job(event, "ended")
+
+async def handleADCConfigWrite(event: RealtimeEvent) -> None:
+    print(f"Pocketbase subscriber is running the handleADCConfigWrite for {event['record']['camera']}")
+    await update_job(event, "running")
+    await pc.write(device=event["record"]["camera"], pga_value=event["record"]["pga"], sps_value=event["record"]["sps"])
     await update_job(event, "ended")
 
 
@@ -127,7 +135,7 @@ async def realtime_updates():
         # Subscribe to Realtime events for the specific record ID in the collection
         unsubscribe = await col.subscribe_all(callback=callback)
 
-        print("Pocketbase subsciber is ready")
+        print("Pocketbase subscriber is ready")
 
         # Infinite loop to wait for events (adjusted from the second snippet)
         while True:

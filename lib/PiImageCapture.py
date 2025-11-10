@@ -53,6 +53,8 @@ class PiImageCapture:
         # Create a new board wrapper - note it has some settings which control the ADC chip config (sample speed etc)
         pront("Connecting to the PiHat ...")
         self.board = PiHatSensor(I2CBUS)
+        self.board.selfConfigure()
+        self.board.printConfig()
 
         # set up PyGame
         pygame.init()

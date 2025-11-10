@@ -49,6 +49,7 @@ class PiLightMeter:
         pront("Connecting to the PiHat ...")
         # Create a new board wrapper - note it has some settings which control the ADC chip config (sample speed etc)
         self.board = PiHatSensor(I2CBUS)
+        self.board.selfConfigure()
         self.board.printConfig()
         
         # Projector ----
