@@ -4,11 +4,11 @@ from scipy.fft import ifft2, ifftshift
 from PIL import Image
 
 # Load .npz data
-npz_data = np.load('/Users/jon/Documents/PROJECTS/15_dualPhotography/data/cat3_fourier128_NLS.npz')
-data = npz_data['output1']
-# data = npz_data['output0'] # If you want to use M0 as well
+npz_data = np.load('data/fourier-128.npz')
+#data = npz_data['output1']
+data = npz_data['output0'] # If you want to use M0 as well
 
-N = 256
+N = 128 
 
 # Frequency arrays
 x = np.linspace(-N/2, N/2, N)
@@ -28,7 +28,6 @@ for n in range(len(freqArr)):
 # Calculate the FFT
 F = np.zeros((N//2, N//2), dtype=complex)
 whichImages = np.arange(4)
-
 for p in range(N**2 // 4):
     temp = data[whichImages]
     F[uArr[p], vArr[p]] = (temp[2] - temp[0]) - 1j * (temp[3] - temp[1])
@@ -69,4 +68,4 @@ Ri = R - np.min(R)
 Ri = (Ri / np.max(Ri) * 255).astype(np.uint8)
 
 # Save the image
-# Image.fromarray(Ri).save('/Users/jon/Documents/PROJECTS/15_dualPhotography/results/catoko_fourier1_NLS.png')
+Image.fromarray(Ri).save('out/fourier.png')

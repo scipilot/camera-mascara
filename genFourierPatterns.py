@@ -4,9 +4,12 @@ import imageio
 import os
 
 # Settings
-folder_save = 'Documents/patterns/test/' # where to save images
+N = 128
+file_dir = f'patterns/fourier_p4_{N}/' # where to save images
 save_images = True
-N = 64
+
+# Ensure the output directory exists
+os.makedirs(file_dir, exist_ok=True)
 
 num_images = N**2
 num_digits = len(str(num_images))
@@ -30,12 +33,13 @@ c = 1
 
 for v in freq_arr:
     for u in freq_arr:
-        phi = phi_arr[p]
-        temp = np.cos(2 * np.pi * (u * X + v * Y) + phi)
-        temp = (temp + 1) / 2
+        for p in range(4):
+            phi = phi_arr[p]
+            temp = np.cos(2 * np.pi * (u * X + v * Y) + phi)
+            temp = (temp + 1) / 2
 
-        if save_images:
-            filename = os.path.join(folder_save, f'fourier_{c:0{num_digits}d}.png')
-            imageio.imwrite(filename, (temp * 255).astype(np.uint8))
-        
-        c += 1
+            if save_images:
+                filename = os.path.join(file_dir, f'fourier_{c:0{num_digits}d}.png')
+                imageio.imwrite(filename, (temp * 255).astype(np.uint8))
+            
+            c += 1
