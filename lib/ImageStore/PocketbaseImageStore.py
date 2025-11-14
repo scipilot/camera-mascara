@@ -18,7 +18,7 @@ class PocketbaseImageStore:   # (ImageStore)
         self.connector = connector 
     
     # ouput is the image data array
-    async def store(self, output, dims, title, stats):
+    async def store(self, output, dims, mask, title, stats):
         pb = await self.connector.connect()
         # Get the collection instance we can work with
         collection = pb.collection(COLLECTION_NAME)
@@ -29,7 +29,7 @@ class PocketbaseImageStore:   # (ImageStore)
 
         ren = ImageRender()
         img = io.BytesIO()
-        ren.render(output, dims, img)
+        ren.render(output, dims, mask, img)
 
         # Upload a file
         # Add a new record.
@@ -43,6 +43,7 @@ class PocketbaseImageStore:   # (ImageStore)
                 "created": datetime.now(),
                 "title": title,
                 "stats": stats,
+                "mask": mask,
                 "data": FileUpload((f"{title}.npz", npz )),
                 "image": FileUpload((f"{title}.png", img )),
             }
@@ -77,6 +78,11 @@ class PocketbaseImageStore:   # (ImageStore)
                         },
                         {
                             "name": "stats",
+                            "type": "text",
+                            "required": False,
+                        },
+                        {
+                            "name": "mask",
                             "type": "text",
                             "required": False,
                         },

@@ -69,11 +69,17 @@ class PiImageCapture:
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
         
-    async def configure(self, image_size, mask_pixel_size):
-        print(f"Image capture configure... {image_size}, {mask_pixel_size}")
+    async def configure(self, image_size, mask_pixel_size, mask_type="Point"):
+        print(f"Image capture configure... {image_size}, {mask_pixel_size}, {mask_type}")
         self.N = image_size
         self.S = mask_pixel_size
-        self.folder_path = f'{base_path}/patterns/PixelScan_{self.S}x{self.S}_{self.N}x{self.N}'
+        self.mask_type = mask_type
+        if mask_type == "point":
+            self.folder_path = f'{base_path}/patterns/PixelScan_{self.S}x{self.S}_{self.N}x{self.N}'
+        elif mask_type == "fourier":
+            self.folder_path = f'{base_path}/patterns/fourier_p4_{self.N}'
+        else:
+            raise(f"PiImageCapture Error: unknown mask type {mask_type} should be 'point' or 'fourier'")
         self.black_image = 'black.png'
         
         # === MASK Load image files =======================================
@@ -146,7 +152,7 @@ class PiImageCapture:
         stats = 'Resol:%dx%d Pixel:%dx%d SPP:%d Wait:WR (mean wait:%0.4f s, stdev wait:%0.4f s) LVL-min:%0.4f max:%0.4f Took:%d s'%(self.N,self.N, self.S,self.S, SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
         #stats = '  samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))
         #print(output0)
-        await self.store.store(np.array(output0), (self.N,self.N), title, stats)
+        await self.store.store(np.array(output0), (self.N,self.N), self.mask_type, title, stats)
         # np.savez(data_path, output0=output0)
 
         print(stats)
