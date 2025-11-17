@@ -1,7 +1,7 @@
 Camera Mascara - a single-sensor masked camera which can take single-pixel or Fourier images with strange perspectives.
 
 This repository has developed into a "server" which can run on the a Raspberry Pi to use a Pi Hat. (Originally the code ran on a host Pc/Mac and controlled an Arduino via Firmata.) To support this there are two other repositories:
-  - a Kicad design for the Pi Hat with amplifier, ADC and controls (aka Jonny Zero Hats)
+  - a Kicad design for the Pi Hat with amplifier, ADC and controls (aka Jonny Zero Hats) https://github.com/scipilot/camera-mascara-jzh
   - a Vue web app UI, (optional if you are happy to run Python over SSH) - https://github.com/scipilot/camera-mascara-vue-pocketbase
 
 
