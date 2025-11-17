@@ -1,3 +1,8 @@
+# purpose - This script was used to trial PyGame as an alternative to MatPlotLib
+# which was terribly slow on the Raspberry Pi Zero.
+# it can probably be deleted now, unless you want to compare the methods on another device.
+
+
 #!/usr/bin/python3
 print("Testing MatPlotLib on the Pi Zero - why so slow...")
 
@@ -14,8 +19,8 @@ import pygame
 print("... imports")
 
 # ====== USER SETTINGS ======
-folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
-folder_path_cali = '/home/pip/CameraMascara/camera-mascara/patterns/Calibration'
+folder_path = 'patterns/PixelScan_2x2_64x64'
+folder_path_cali = 'patterns/Calibration'
 
 N = 64
 3

@@ -11,9 +11,9 @@ import pygame
 from lib.PiHatSensor import PiHatSensor
 
 # ====== USER SETTINGS ======
-folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
+folder_path = 'patterns/PixelScan_2x2_64x64'
 black_image = 'pixel_0001.png'
-data_path = '/home/pip/CameraMascara/camera-mascara/data/pixels.npz'
+data_path = 'data/pixels.npz'
 
 I2CBUS = 1
 

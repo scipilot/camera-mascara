@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-#from scipy.fft import ifft2, ifftshift
-#from PIL import Image
+from scipy.fft import ifft2, ifftshift
+from PIL import Image
 
 # Renders the brightrness array into a PNG, file or return
 class ImageRender:
@@ -10,8 +9,12 @@ class ImageRender:
     # output is the data array of brightness values
     # dims is the resolution dimension tuple (N,N)
     # file is a File-like (for return), or filename (for direct filesystem saving)
-    def render(self, output, dims, file):
-        self.render_point(output, dims, file)
+    def render(self, output, dims, mask, file):
+        if mask == "pixel":
+           self.render_point(output, dims, file)
+        elif mask == "fourier":
+           self.render_fourier(output, dims, file)
+        else: raise(f"ImageRender.render: Unknown mask type:{mask} - expecting pixel or fourier")
 
     def render_point(self, output, dims, file):
         image0 = output.reshape(dims)
@@ -29,7 +32,7 @@ class ImageRender:
         plt.imsave(file, img_uint8)
 
     def render_fourier(self, output, dims, file):
-        N = 256
+        N = dims[0]
 
         # Frequency arrays
         x = np.linspace(-N/2, N/2, N)
@@ -51,7 +54,7 @@ class ImageRender:
         whichImages = np.arange(4)
 
         for p in range(N**2 // 4):
-            temp = data[whichImages]
+            temp = output[whichImages]
             F[uArr[p], vArr[p]] = (temp[2] - temp[0]) - 1j * (temp[3] - temp[1])
             whichImages += 4
 
@@ -63,31 +66,32 @@ class ImageRender:
         amplitude = np.log(1 + np.abs(F))
         phase = np.angle(F)
 
-        plt.figure(facecolor='white')
-        plt.subplot(1, 2, 1)
-        plt.imshow(amplitude, cmap='gray')
-        plt.axis('image')
-        plt.xticks([]); plt.yticks([])
-        plt.gca().tick_params(color='white', labelcolor='white')
+        #plt.figure(facecolor='white')
+        #plt.subplot(1, 2, 1)
+        #plt.imshow(amplitude, cmap='gray')
+        #plt.axis('image')
+        #plt.xticks([]); plt.yticks([])
+        #plt.gca().tick_params(color='white', labelcolor='white')
 
-        plt.subplot(1, 2, 2)
-        plt.imshow(phase, cmap='gray')
-        plt.axis('image')
-        plt.xticks([]); plt.yticks([])
-        plt.gca().tick_params(color='white', labelcolor='white')
-        plt.show()
+        #plt.subplot(1, 2, 2)
+        #plt.imshow(phase, cmap='gray')
+        #plt.axis('image')
+        #plt.xticks([]); plt.yticks([])
+        #plt.gca().tick_params(color='white', labelcolor='white')
+        #plt.show()
 
         # Display reconstructed image
-        plt.figure(facecolor='black')
-        plt.imshow(R, cmap='gray')
-        plt.axis('image')
-        plt.xticks([]); plt.yticks([])
-        plt.gca().tick_params(color='white', labelcolor='white')
-        plt.show()
+        #plt.figure(facecolor='black')
+        #plt.imshow(R, cmap='gray')
+        #plt.axis('image')
+        #plt.xticks([]); plt.yticks([])
+        #plt.gca().tick_params(color='white', labelcolor='white')
+        #plt.show()
 
         # Normalize and save image
         Ri = R - np.min(R)
         Ri = (Ri / np.max(Ri) * 255).astype(np.uint8)
 
         # Save the image
-        # Image.fromarray(Ri).save('/Users/jon/Documents/PROJECTS/15_dualPhotography/results/catoko_fourier1_NLS.png')
+        plt.imsave(file, Image.fromarray(Ri))
+

@@ -2,6 +2,13 @@
 import matplotlib as mpl
 import time
 
+# Purpose: this script was used to check the subject and light levels before running "capture"
+# it displays the same frame and black background level so you can adjust the positioning
+# of the subject and any voltages on the sensor (bias, amplification, feedback etc),
+# before taking a shot.
+#  Also see the light-meter which also shows a black screen.
+
+
 # sleep to let me close the laptop to switch to projector
 time.sleep(2)
 

@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 from scipy.fft import ifft2, ifftshift
 from PIL import Image
 
+N = 128
+
 # Load .npz data
-npz_data = np.load('data/fourier-128.npz')
+npz_data = np.load(f'data/fourier-{N}.npz')
 #data = npz_data['output1']
 data = npz_data['output0'] # If you want to use M0 as well
 
-N = 128 
 
 # Frequency arrays
 x = np.linspace(-N/2, N/2, N)

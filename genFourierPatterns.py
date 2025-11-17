@@ -4,7 +4,7 @@ import imageio
 import os
 
 # Settings
-N = 128
+N = 64 
 file_dir = f'patterns/fourier_p4_{N}/' # where to save images
 save_images = True
 

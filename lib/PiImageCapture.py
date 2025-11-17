@@ -69,7 +69,7 @@ class PiImageCapture:
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
         
-    async def configure(self, image_size, mask_pixel_size, mask_type="Point"):
+    async def configure(self, image_size, mask_pixel_size, mask_type="point"):
         print(f"Image capture configure... {image_size}, {mask_pixel_size}, {mask_type}")
         self.N = image_size
         self.S = mask_pixel_size
@@ -147,7 +147,10 @@ class PiImageCapture:
         waitss = self.board.getWaits()
 
         ts = datetime.now().isoformat(sep='_', timespec='seconds') 
-        title = f"PointScan_{ts}_{self.N}x{self.N}_{self.S}x{self.S}_WR_{SAMPLES_PER_PIXEL}SPP"
+        if self.mask_type == "point":
+            title = f"PointScan_{ts}_{self.N}x{self.N}_{self.S}x{self.S}_WR_{SAMPLES_PER_PIXEL}SPP"
+        elif self.mask_type == "fourier":
+            title = f"Fourier_{ts}_{self.N}x{self.N}__WR_{SAMPLES_PER_PIXEL}SPP"
                                                   
         stats = 'Resol:%dx%d Pixel:%dx%d SPP:%d Wait:WR (mean wait:%0.4f s, stdev wait:%0.4f s) LVL-min:%0.4f max:%0.4f Took:%d s'%(self.N,self.N, self.S,self.S, SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
         #stats = '  samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))

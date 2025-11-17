@@ -1,3 +1,6 @@
+# Purpose: this is the original camera "scan" code for the phase 1  Ardiono, 
+#   which has now been evolved and integrated to "run.py" and "lib/Capture"
+
 import os
 import time
 import matplotlib.pyplot as plt
@@ -6,7 +9,7 @@ import pyfirmata
 import numpy as np
 
 # ====== USER SETTINGS ======
-folder_path = '/Users/pip/Documents/OnePixel/projector/patterns/quick'  # <-- Replace with your path
+folder_path = 'patterns/quick'  # <-- Replace with your path
 
 #folder_path = '//Users/jon/Documents/PROJECTS/11_compressedSensing/patterns/hadamard/128x128/'  # <-- Replace with your path
 #folder_path = '//Users/jon/Documents/PROJECTS/11_compressedSensing/patterns/hadamard/64x64inverse/'  # <-- Replace with your path

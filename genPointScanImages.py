@@ -4,9 +4,9 @@ import os
 import math
 
 # Parameters
-M = 16 # number of pixels to scan
-R = 16 # Overall size of image
-S = 2 # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
+M = 32  # number of pixels to scan
+R = 32  # Overall size of image
+S = 2   # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 file_dir = "patterns/PixelScan_%dx%d_%dx%d/" % (S,S,M,R) # where to save images
 
 # Ensure the output directory exists

@@ -1,6 +1,12 @@
-from smbus2 import SMBus, i2c_msg
+# Purpose - this was used to initially test the SMBus2 I2C library against the ADS1110 which had issues
+# due to its slightly odd protocol (no registers)
+# You can still use it to configure the device or read its config manually.
+# but you can now also do that via the Pocketbase API, so this is less used.
+
 
 # Note you cannot use functions like bus.write_byte_data with the ADS1110 aa they select a register which it doesn't have.
+
+from smbus2 import SMBus, i2c_msg
 
 addr = 0x48 # The "ED0" ADS1110A0I chip address
 
@@ -26,8 +32,8 @@ def ADCWriteConfig(bus,addr):
 
 
 with SMBus(1) as bus:
-#	ADCWriteConfig(bus,addr)
+	ADCWriteConfig(bus,addr)
 
-	data = ADCReadData(bus,addr)
-	print(data)
+#	data = ADCReadData(bus,addr)
+#	print(data)
 

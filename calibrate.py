@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+# Purpose: this script can be used to record the output level of the sensor across a range of brightness levels.
+# It shows a sequence of (256) images from black to white and records the voltage output.
+# This can be plotted to view a response graph to check for linearity, clipping, range etc.
+# while you vary other parameters like bias, feeback, amplification, offsets etc.
+#
+# It targetted the "phase 1" Arduino and has not yet been evovled to the Pi version!
+
 import os
 import sys
 import pyfirmata2
@@ -11,7 +18,7 @@ import matplotlib.image as mpimg
 from tkinter import Tk 
 
 # ====== USER SETTINGS ======
-folder_path = '/Users/pip/Documents/OnePixel/projector/patterns/Calibration'
+folder_path = 'patterns/Calibration'
 
 # PORT = '/dev/cu.usbmodem101'
 PORT = pyfirmata2.Arduino.AUTODETECT
