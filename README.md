@@ -51,7 +51,7 @@ First you need to install Pocketbase, which is pretty simple (see their document
 Once the code is installed on the Pi, install two systemd services:
 
 1. Install Pocketbase as a service. (assume into /usr/local/pocketbase/)
-   
+ 
     cp systemd/pocketbase.service /lib/systemd/system/
     sudo systemctl enable mascara-pocketbase.service
     sudo systemctl start mascara-pocketbase
@@ -64,11 +64,12 @@ Once the code is installed on the Pi, install two systemd services:
     sudo systemctl start mascara-pocketbase
 
 To view logs or diagnose
- 
+
     sudo tail -f /usr/local/mascara-pocketbase/std.log
     journalctl -u mascara-pocketbase.service
 
 To edit definition
+
     nano /lib/systemd/system/mascara-pocketbase.service
     systemctl daemon-reload
 
