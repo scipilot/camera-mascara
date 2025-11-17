@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-print("LIGHT METER")
 
 import os
 import sys
@@ -14,9 +13,8 @@ from lib.Meters.PocketbaseBrightnessMeter import PocketbaseBrightnessMeter
 from lib.Pocketbase.Connector import Connector
 
 # ====== USER SETTINGS ======
-folder_path = '/home/pip/CameraMascara/camera-mascara/patterns/PixelScan_2x2_64x64'
+folder_path = 'patterns/PixelScan_2x2_64x64'
 black_image = 'black.png'
-#data_path = '/home/pip/CameraMascara/camera-mascara/data/pixels.npz'
 
 I2CBUS = 1
 
@@ -43,17 +41,18 @@ class PiLightMeter:
         self.device = device
         
     async def run(self):
+        print("LIGHT METER...")
         await self.meter.init()
         tStart = time.time()
 
-        pront("Connecting to the PiHat ...")
+        #pront("Connecting to the PiHat ...")
         # Create a new board wrapper - note it has some settings which control the ADC chip config (sample speed etc)
         self.board = PiHatSensor(I2CBUS)
         self.board.selfConfigure()
         self.board.printConfig()
         
         # Projector ----
-        pront("Setting up plotter...")
+        #pront("Setting up plotter...")
         # set up PyGame
         pygame.init()
         border = 0
@@ -62,7 +61,7 @@ class PiLightMeter:
         screen = pygame.display.set_mode(resolution, pygame.SCALED | pygame.FULLSCREEN) # | pygame.RESIZABLE)
         pygame.display.set_caption("Camera Mascara")
         # show dark screen 
-        pront("Show dark screen...")
+        #pront("Show dark screen...")
         screen.fill((0, 0, 0))
         pygame.mouse.set_visible(False)
         #surface = pygame.image.load(os.path.join(folder_path,black_image)).convert()
@@ -86,9 +85,4 @@ class PiLightMeter:
         #stdevs = board.getStdev()
         # Close the serial connection to the Arduino
         self.board.shutdown()
-
-        #print(output0)
-        #np.savez(data_path, output0=output0)
-
-        #print('Samples/pixel:%d interval:%f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], #stdevs[1], np.min(output0), np.max(output0)))
 
