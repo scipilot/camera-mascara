@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from smbus2 import SMBus, i2c_msg
 import numpy as np
 
-# This wraps accessing the Pi Hat ADC via I2C
+# This wraps accessing the Pi Hat ADC (TI ADS1110) via I2C
 # Note you cannot use functions like bus.write_byte_data with the ADS1110 aa they select a register which it doesn't have.
 
 # device address

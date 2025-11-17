@@ -14,7 +14,7 @@ from lib.PiHatSensor import PiHatSensor
 #N = 16 # pixel w/h
 #S = 2  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res.
 
-base_path = '/home/pip/CameraMascara/camera-mascara'
+base_path = ''
 folder_path_cali = f'{base_path}/patterns/Calibration'
 data_path = f'{base_path}/data/pixels.npz'
 
