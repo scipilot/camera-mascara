@@ -1,12 +1,12 @@
 [
   {
-    "id": "pbc_202347339",
+    "id": "pbc_1125843985",
     "listRule": "",
     "viewRule": "",
-    "createRule": null,
-    "updateRule": null,
-    "deleteRule": null,
-    "name": "cameras",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
+    "name": "jobs",
     "type": "base",
     "fields": [
       {
@@ -24,24 +24,12 @@
         "type": "text"
       },
       {
-        "hidden": false,
-        "id": "number3648444131",
-        "max": null,
-        "min": null,
-        "name": "brightness",
-        "onlyInt": false,
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "number"
-      },
-      {
         "autogeneratePattern": "",
         "hidden": false,
-        "id": "text1579384326",
+        "id": "text724990059",
         "max": 0,
         "min": 0,
-        "name": "name",
+        "name": "title",
         "pattern": "",
         "presentable": false,
         "primaryKey": false,
@@ -50,22 +38,94 @@
         "type": "text"
       },
       {
+        "cascadeDelete": false,
+        "collectionId": "_pb_users_auth_",
         "hidden": false,
-        "id": "number1080771931",
-        "max": 20,
-        "min": 1,
-        "name": "SPP",
-        "onlyInt": true,
+        "id": "relation2375276105",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "user",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "select4225294584",
+        "maxSelect": 1,
+        "name": "job",
         "presentable": false,
         "required": true,
+        "system": false,
+        "type": "select",
+        "values": [
+          "capture",
+          "meter",
+          "adc.config.read",
+          "adc.config.write"
+        ]
+      },
+      {
+        "hidden": false,
+        "id": "select2744374011",
+        "maxSelect": 1,
+        "name": "state",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "requested",
+          "pending",
+          "starting",
+          "running",
+          "ending",
+          "ended"
+        ]
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_202347339",
+        "hidden": false,
+        "id": "relation991751685",
+        "maxSelect": 1,
+        "minSelect": 0,
+        "name": "camera",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "relation"
+      },
+      {
+        "hidden": false,
+        "id": "number4258467722",
+        "max": null,
+        "min": null,
+        "name": "image_size",
+        "onlyInt": true,
+        "presentable": false,
+        "required": false,
         "system": false,
         "type": "number"
       },
       {
         "hidden": false,
-        "id": "select756965222",
+        "id": "number1355374395",
+        "max": null,
+        "min": null,
+        "name": "mask_pixel_size",
+        "onlyInt": true,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "hidden": false,
+        "id": "select3149471212",
         "maxSelect": 1,
-        "name": "ADC_PGA",
+        "name": "pga",
         "presentable": false,
         "required": false,
         "system": false,
@@ -79,9 +139,9 @@
       },
       {
         "hidden": false,
-        "id": "select1103567191",
+        "id": "select1338332779",
         "maxSelect": 1,
-        "name": "ADC_SPS",
+        "name": "sps",
         "presentable": false,
         "required": false,
         "system": false,
@@ -95,28 +155,17 @@
       },
       {
         "hidden": false,
-        "id": "number1519358150",
-        "max": null,
-        "min": null,
-        "name": "ADC_VINNEG",
-        "onlyInt": false,
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "number"
-      },
-      {
-        "cascadeDelete": false,
-        "collectionId": "pbc_1125843985",
-        "hidden": false,
-        "id": "relation4225294584",
+        "id": "select4279121784",
         "maxSelect": 1,
-        "minSelect": 0,
-        "name": "job",
+        "name": "mask_type",
         "presentable": false,
         "required": false,
         "system": false,
-        "type": "relation"
+        "type": "select",
+        "values": [
+          "point",
+          "fourier"
+        ]
       },
       {
         "hidden": false,
@@ -238,13 +287,13 @@
     "system": false
   },
   {
-    "id": "pbc_1125843985",
+    "id": "pbc_202347339",
     "listRule": "",
     "viewRule": "",
-    "createRule": "",
-    "updateRule": "",
-    "deleteRule": "",
-    "name": "jobs",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "name": "cameras",
     "type": "base",
     "fields": [
       {
@@ -262,12 +311,24 @@
         "type": "text"
       },
       {
+        "hidden": false,
+        "id": "number3648444131",
+        "max": null,
+        "min": null,
+        "name": "brightness",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
         "autogeneratePattern": "",
         "hidden": false,
-        "id": "text724990059",
+        "id": "text1579384326",
         "max": 0,
         "min": 0,
-        "name": "title",
+        "name": "name",
         "pattern": "",
         "presentable": false,
         "primaryKey": false,
@@ -276,86 +337,73 @@
         "type": "text"
       },
       {
-        "cascadeDelete": false,
-        "collectionId": "_pb_users_auth_",
         "hidden": false,
-        "id": "relation2375276105",
-        "maxSelect": 1,
-        "minSelect": 0,
-        "name": "user",
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "relation"
-      },
-      {
-        "hidden": false,
-        "id": "select4225294584",
-        "maxSelect": 1,
-        "name": "job",
+        "id": "number1080771931",
+        "max": 20,
+        "min": 1,
+        "name": "SPP",
+        "onlyInt": true,
         "presentable": false,
         "required": true,
         "system": false,
-        "type": "select",
-        "values": [
-          "capture",
-          "meter"
-        ]
+        "type": "number"
       },
       {
         "hidden": false,
-        "id": "select2744374011",
+        "id": "select756965222",
         "maxSelect": 1,
-        "name": "state",
+        "name": "ADC_PGA",
         "presentable": false,
         "required": false,
         "system": false,
         "type": "select",
         "values": [
-          "requested",
-          "pending",
-          "starting",
-          "running",
-          "ending",
-          "ended"
+          "1",
+          "2",
+          "4",
+          "8"
         ]
       },
       {
-        "cascadeDelete": false,
-        "collectionId": "pbc_202347339",
         "hidden": false,
-        "id": "relation991751685",
+        "id": "select1103567191",
+        "maxSelect": 1,
+        "name": "ADC_SPS",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "select",
+        "values": [
+          "15",
+          "30",
+          "60",
+          "240"
+        ]
+      },
+      {
+        "hidden": false,
+        "id": "number1519358150",
+        "max": null,
+        "min": null,
+        "name": "ADC_VINNEG",
+        "onlyInt": false,
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "number"
+      },
+      {
+        "cascadeDelete": false,
+        "collectionId": "pbc_1125843985",
+        "hidden": false,
+        "id": "relation4225294584",
         "maxSelect": 1,
         "minSelect": 0,
-        "name": "camera",
+        "name": "job",
         "presentable": false,
         "required": false,
         "system": false,
         "type": "relation"
-      },
-      {
-        "hidden": false,
-        "id": "number4258467722",
-        "max": null,
-        "min": null,
-        "name": "image_size",
-        "onlyInt": true,
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "number"
-      },
-      {
-        "hidden": false,
-        "id": "number1355374395",
-        "max": null,
-        "min": null,
-        "name": "mask_pixel_size",
-        "onlyInt": true,
-        "presentable": false,
-        "required": false,
-        "system": false,
-        "type": "number"
       },
       {
         "hidden": false,
