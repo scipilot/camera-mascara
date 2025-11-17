@@ -1,3 +1,7 @@
+# Purpose: this script generates the Fourier mask images for a certain image size/resolution, 
+# and stores them in a naming-convention folder, where the scanner can find them.
+# TODO: add the "black.png" images shown to settle the sensor
+
 import numpy as np
 import matplotlib.pyplot as plt
 import imageio

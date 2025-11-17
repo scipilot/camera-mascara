@@ -4,6 +4,8 @@
 # It shows a sequence of (256) images from black to white and records the voltage output.
 # This can be plotted to view a response graph to check for linearity, clipping, range etc.
 # while you vary other parameters like bias, feeback, amplification, offsets etc.
+# 
+# See genCalibrationImages.py - run this first
 #
 # It targetted the "phase 1" Arduino and has not yet been evovled to the Pi version!
 

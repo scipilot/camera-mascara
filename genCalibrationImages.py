@@ -1,9 +1,10 @@
+# Purpose: Creates photosensor calibration images  - see calibrate.py
+
 import numpy as np
 import imageio
 import os
 import math
 
-# Creates photo sensor calibration images 
 
 # Parameters
 M = 64 # number of pixels to scan

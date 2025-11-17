@@ -1,3 +1,9 @@
+# Purpose: this is the main "service" script  which can perform all the functions (scan, meter, config)
+# via the Pocketbase API. It listens to "job" requests and processes the job accordingly, e.g. 
+# taking a photo at the specified resolution and saving the resulting image in the database.
+# or running the light-meter and updating the corresponding device record.
+# Most of these functions have manual scripts too, but this is the "lights-out" wrapper service.
+
 print("Pocketbase subscriber is starting...")
 import asyncio
 import os

@@ -1,8 +1,13 @@
+# Purpose: this is the original script to render a photo from the saved NPZ data file
+#   it was run after "capture" script.
+# It has now been migrated to the lib/ImageRender class which can be called at the end of the scan
+
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-project_path = '/home/pip/CameraMascara/camera-mascara/'  # <-- Replace with your path
+project_path = ''  # <-- Replace with your path
 
 # === Load the data ===
 data = np.load(os.path.join(project_path, 'data/pixels.npz')) 

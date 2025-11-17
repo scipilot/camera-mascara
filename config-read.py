@@ -1,3 +1,9 @@
+# Purpose - manual script to read the raw config from the ADC chip.
+# SUPERSEDED - use the API instead. 
+# Also the PiHatSensor class now has friendlier functions which parse the result 
+#  and return a structured represenation of the gain, data rate etc.
+
+
 from lib.PiHatSensor import PiHatSensor
 
 I2CBUS = 1

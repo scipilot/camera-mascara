@@ -1,3 +1,10 @@
+# Purpose - this generates the mask images for the single-pixel or point-scan method.
+# you need to set the options below, and it will save to to an naming convention folder
+# which the scanner script will also calculate when this resolution combo is requested.
+# So you need to run this script before trying to scan at that resolution combo.
+# Note higher resolution makes the single pixel relatively smaller, so you might want a bigger one.
+# TODO: Integrate this with the API and/or do on-demand generation when a combo is not found.
+
 import numpy as np
 import imageio
 import os
