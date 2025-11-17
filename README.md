@@ -79,6 +79,14 @@ See the JSON structure dump in `etc/pocketbase`, and import it into the GUI:
 
 http://raspberrypi.local:8090/_/#/settings/import-collections
 
+4. Configure the python to authenticate with to the local Pocketbase admin user. (The default URL should work.)
+
+    cp env.dist .env
+    nano .env
+	POCKETBASE_SUPERUSER_EMAIL="admin"
+	POCKETBASE_SUPERUSER_PASSWORD="password"
+	POCKETBASE_CONNECTION_URL="127.0.0.1:8090"
+
 
 Then you can use the API or UI at http://raspberrypi.local:8090/ (note: installing the UI website replaces the default API view)
 
