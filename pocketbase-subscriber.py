@@ -57,65 +57,67 @@ if CONNECTION_URL == "": raise SystemExit("POCKETBASE_CONNECTION_URL environment
 if SUPERUSER_EMAIL == "": raise SystemExit("POCKETBASE_SUPERUSER_EMAIL environment variable not set!")
 if SUPERUSER_PASSWORD == "": raise SystemExit("POCKETBASE_SUPERUSER_PASSWORD environment variable not set!")
 
+
+pb = None 
+
 async def callback(event: RealtimeEvent) -> None:
     """Callback function for handling Realtime events.
-
     Args:
         event (RealtimeEvent): The event object containing information about the record change.
     """
+    global pb
     # This will get called for every event
     at = datetime.now().isoformat()
     print(f"[{at}] {event['action'].upper()}: {event['record']}")
     # onky service "requests" as the record is updated by the job itself (and would recurse!)
     if event['record']['state'] == 'requested':
         if event['record']['job'] == 'capture':
-            await handleCapture(event)
+            await handleCapture(event, pb)
         elif event['record']['job'] == 'meter':
-            await handleMeter(event)
+            await handleMeter(event, pb)
         elif event['record']['job'] == 'adc.config.read':
-            await handleADCConfigRead(event)
+            await handleADCConfigRead(event, pb)
         elif event['record']['job'] == 'adc.config.write':
-            await handleADCConfigWrite(event)
+            await handleADCConfigWrite(event, pb)
         else:
             print(f"Unknown job { event['record']['job'] }")
 
-async def handleCapture(event: RealtimeEvent) -> None:
+async def handleCapture(event: RealtimeEvent, pb) -> None:
     print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']} for {event['record']['camera']}")
     await pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'], mask_type=event["record"]["mask_type"])
-    await update_job(event, "running")
+    await update_job(event, "running", pb)
     await pic.run()
-    await update_job(event, "ended")
+    await update_job(event, "ended", pb)
 
 
-async def handleMeter(event: RealtimeEvent) -> None:
+async def handleMeter(event: RealtimeEvent, pb) -> None:
     print(f"Pocketbase subscriber is running the meter for {event['record']['camera']}")
     #await update_job(event, "starting")
     await plm.configure(device=event["record"]["camera"])
-    await update_job(event, "running")
+    await update_job(event, "running", pb)
     await plm.run()
-    await update_job(event, "ended")
+    await update_job(event, "ended", pb)
 
-async def handleADCConfigRead(event: RealtimeEvent) -> None:
+async def handleADCConfigRead(event: RealtimeEvent, pb) -> None:
     print(f"Pocketbase subscriber is running the handleADCConfigRead for {event['record']['camera']}")
-    await update_job(event, "running")
+    await update_job(event, "running", pb)
     await pc.read(device=event["record"]["camera"])
-    await update_job(event, "ended")
+    await update_job(event, "ended", pb)
 
-async def handleADCConfigWrite(event: RealtimeEvent) -> None:
+async def handleADCConfigWrite(event: RealtimeEvent, pb) -> None:
     print(f"Pocketbase subscriber is running the handleADCConfigWrite for {event['record']['camera']}")
-    await update_job(event, "running")
+    await update_job(event, "running", pb)
     await pc.write(device=event["record"]["camera"], pga_value=event["record"]["pga"], sps_value=event["record"]["sps"])
-    await update_job(event, "ended")
+    await update_job(event, "ended", pb)
 
 
-async def update_job(event: RealtimeEvent, state):
-    pb = await connector.connect()
+async def update_job(event: RealtimeEvent, state, pb):
     col = pb.collection(COLLECTION_NAME)
     updated = await col.update(record_id=event["record"]["id"], params={"state": state})
     # also update the client denormalisation
-    await update_client(pb, event, state)
+    await update_client(event, state, pb)
 
-async def update_client(pb, event: RealtimeEvent, state):
+async def update_client(event: RealtimeEvent, state, pb):
     if state == "ended":
         # remove the job from this device
         setJob = ""
@@ -126,6 +128,7 @@ async def update_client(pb, event: RealtimeEvent, state):
 
 async def realtime_updates():
     """Establishes a PocketBase connection, authenticates, and subscribes to Realtime events."""
+    global pb
     unsubscribe = None
 
     try:

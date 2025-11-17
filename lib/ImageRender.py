@@ -10,11 +10,11 @@ class ImageRender:
     # dims is the resolution dimension tuple (N,N)
     # file is a File-like (for return), or filename (for direct filesystem saving)
     def render(self, output, dims, mask, file):
-        if mask == "pixel":
+        if mask == "point":
            self.render_point(output, dims, file)
         elif mask == "fourier":
            self.render_fourier(output, dims, file)
-        else: raise(f"ImageRender.render: Unknown mask type:{mask} - expecting pixel or fourier")
+        else: raise(f"ImageRender.render: Unknown mask type'{mask}' - expecting point or fourier", mask)
 
     def render_point(self, output, dims, file):
         image0 = output.reshape(dims)
@@ -66,8 +66,8 @@ class ImageRender:
         amplitude = np.log(1 + np.abs(F))
         phase = np.angle(F)
 
-       print("min:%f, max:%f" % (np.min(R), np.max(R)))
-       # Normalize and save image
+        print("min:%f, max:%f" % (np.min(R), np.max(R)))
+        # Normalize and save image
         Ri = R - np.min(R)
         Ri = (Ri / np.max(Ri) * 255).astype(np.uint8)
 
