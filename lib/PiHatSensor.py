@@ -22,6 +22,11 @@ CFG_DR1  = 3
 CFG_DR2  = 2
 CFG_PGA1 = 1
 CFG_PGA2 = 0
+# config bit masks
+CFM_DRDY = 128
+CFM_SC   = 16
+CFM_DR   = 12
+CFM_PGA  = 3
 #config options
 DR_240SPS = 0b00
 DR_60SPS  = 0b01
@@ -47,6 +52,14 @@ PGA_VALUES = {
     2: 4,
     3: 8,
 }
+# inverse mapping 
+PGA_OPTIONS = {
+    '1': 0,
+    '2': 1,
+    '4': 2,
+    '8': 3,
+}
+
 #TODO - this isn't consistent now! either bitmask the values in position OR shift into place. I'm currently doing a mix of both!
 # DR is the masked setting (12,8,4,6), and DR_values is the actual samples per second (15,30,60,120)
 DR_VALUES = {
@@ -55,20 +68,26 @@ DR_VALUES = {
     4: 60,
     0: 240,
 }
-
-# inverse mapping 
-PGA_OPTIONS = {
-    '1': 0,
-    '2': 1,
-    '4': 2,
-    '8': 3,
-}
 # inverse mapping
 DR_OPTIONS = {
-    '15':  3,
-    '30':  2,
-    '60':  1,
-    '240': 0,
+    '15':  12,
+    '30':   8,
+    '60':   4,
+    '240':  0,
+}
+# max value at each DR setting, when clipping high
+DR_MAX = {
+   12: 0x7FFF,
+    8: 0x3FFF,
+    4: 0x1FFF,
+    0: 0x0FFF,
+}
+# min value when clipping low
+DR_MIN = {
+   12: 0x8000,
+    8: 0xC000,
+    4: 0xE000,
+    0: 0xF800,
 }
 
 @dataclass
@@ -87,6 +106,8 @@ class PiHatSensor:
         self.waits = []
         self.PGA = 0
         self.DR = 0
+        self.min = 0
+        self.max = 0
 
     def selfConfigure(self):
         """Configures this object instance parameters from the ADC chip config"""
@@ -95,20 +116,22 @@ class PiHatSensor:
         self.DR = cs.SPS
 
     def ADCReadVoltage(self):
-        return self.convert(self.ADCReadData())
+        [v, c] = self.convert(self.ADCReadData())
+        return [v, c]
 
     def ADCReadNewVoltage(self):
-        return self.convert(self.ADCReadNewData())
+        [v, c] =  self.convert(self.ADCReadNewData())
+        return [v, c] 
 
     def ADCReadVoltageWithData(self):
         sample = self.ADCReadData()
-        voltage = self.convert(sample)
-        return [voltage, sample]
+        [voltage, clip]  = self.convert(sample)
+        return [voltage, clip, sample]
 
     def ADCReadNewVoltageWithData(self):
         sample = self.ADCReadNewData()
-        voltage = self.convert(sample)
-        return [voltage, sample]
+        [voltage, clip]  = self.convert(sample)
+        return [voltage, clip, sample]
 
     def getConfig(self):
         return [self.PGA, MIN_CODE, MAX_V, VIN_NEG, self.DR]
@@ -145,7 +168,7 @@ class PiHatSensor:
             # Read 3 bytes from device (16bit data and config)
             bytes = self.ADCReadData()
             #print(list(bytes))
-            NDRDY = bytes[2] & 1 << CFG_DRDY
+            NDRDY = bytes[2] & CFM_DRDY
             read = NDRDY == 128
             #print(f"NDRDY={NDRDY} read={read}")
             wait = wait + 1
@@ -164,8 +187,8 @@ class PiHatSensor:
     def ADCReadConfigStruct(self):
         """Reads the ADC config and returns it as a Config structure, does not sync the local params"""
         conf = self.ADCReadConfig()
-        PGA = conf & 0b11 << CFG_PGA2
-        DR = conf & 0b11 << CFG_DR2
+        PGA = conf & CFM_PGA
+        DR = conf & CFM_DR
         print("read conf byte 0x%x %d PGA=#%d DR=#%d"%(conf, conf, PGA, DR))
         return ConfigStruct(PGA=PGA, PGA_value=PGA_VALUES[PGA], SPS=DR, SPS_value=DR_VALUES[DR])
 
@@ -179,7 +202,7 @@ class PiHatSensor:
         """ Updates the ADC chip config, and syncs the local params """
         self.PGA = PGA_OPTIONS[PGA_value]
         self.DR = DR_OPTIONS[SPS_value]
-        conf = self.PGA | (self.DR << 2) | (SC <<4)
+        conf = self.PGA | self.DR | SC
         print(f"write PGA={self.PGA} DR={self.DR} SC={SC} conf={conf:02x}H")
         self.bus.write_byte(addr, conf)
 
@@ -188,21 +211,32 @@ class PiHatSensor:
 
     # code = 16 bits of data, and 1 byte of config
     # Note the config could be parsed right now to get the settings
+    # returns [vin, clip] where vin is the sampled voltage and clip = None, -1 or +1 
     def convert(self, bytes):
         #print("convert bytes %d %d"%(bytes[0], bytes[1]))
         out = bytes[0] * 256 + bytes[1]
 
         # Convert from two's complement (0-7FFF is the positive range, 8000-FFFF is the negatve range)
         #print("  twos   out:%x %d"%(out, out))
-        out = unsignedToSigned(out, 2)
+        uout = unsignedToSigned(out, 2)
         #print("  signed out:%d"%(out))
 
         # Recalculate VIN from the output code equation in the datasheet
         # Output Code = −1 x Min Code x PGA x ( (VIN+ - VIN-) / 2.048V )
         # VIN+ = ( Output Code * MAXV / (−1 x Min Code x PGA)) + VIN-
-        vin = (out * MAX_V / ( -1 * MIN_CODE * PGA_VALUES[self.PGA])) + VIN_NEG
+        vin = (uout * MAX_V / ( -1 * MIN_CODE * PGA_VALUES[self.PGA])) + VIN_NEG
         #print(f"{vin} = ({out} * {MAX_V} / ( -1 * {MIN_CODE} * {PGA_VALUES[self.PGA]})) + {VIN_NEG} ")
-        return vin
+
+
+        if out == DR_MAX[self.DR]: 
+            clip = +1    
+        elif out == DR_MIN[self.DR]: 
+            clip = -1
+        else: 
+            clip = None
+            #print("self.DR", self.DR, "DR_MIN[self.DR]:", DR_MIN[self.DR], "vin", vin, "out", out, "uout", uout, "clip", clip)
+
+        return [vin, clip]
 
 
 def unsignedToSigned(n, byte_count):

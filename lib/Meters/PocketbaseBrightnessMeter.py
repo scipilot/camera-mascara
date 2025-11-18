@@ -13,10 +13,18 @@ class PocketbaseBrightnessMeter:
         self.pb = await self.connector.connect()
     
     # brighrness is the current voltage level
-    async def record(self, device_id, brightness):
+    async def record(self, device_id, brightness, clip):
         collection = self.pb.collection(COLLECTION_NAME)
 
-        updated = await collection.update(record_id=device_id, params={"brightness": brightness})
-        #print(updated)
+        updated = await collection.update(record_id=device_id, params={"brightness": brightness, "clip":self.mapClip(clip)})
+        #print("bright:",brightness,"clip:",clip, self.mapClip(clip))
 
+    # maps clipping value from device values to database field options
+    def mapClip(self, c):
+        map = {
+            None: "no",
+            -1: "lo",
+            +1: "hi"
+        }
+        return map[c]
 
