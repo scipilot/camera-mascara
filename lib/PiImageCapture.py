@@ -36,10 +36,10 @@ def pront(str):
 # DI  interfaxce 
 class ImageStore():
     """
-    The base class for accessing a user's information.
-    The client must extend this class and implement its methods.
+    The base class for storing the image.
+    The strategy should  extend this class and implement its methods.
     """
-    def store(self, title):
+    def store(self, output, dims, mask, title, stats, clipped):
         raise NotImplementedError
 
 
@@ -99,11 +99,12 @@ class PiImageCapture:
     async def run(self):
         print("Image capture starting...")
         #samples = []
-        output0 = []    
-        
+        output0 = [] 
+        clipped = 0 # 2 bit field
+       
+        # swing low
         self.dark()
         time.sleep(1)
-
         tStart = time.time()
 
         # Mask display synchronised loop
@@ -127,19 +128,24 @@ class PiImageCapture:
             #pront(f"flipped: {idx}")
 
             # At 15SPS is 0.066s fastest possible case, so sleep for 60 as the code takes some time anyway (tune via the stats)
+            # No sleep is technically needed when using "ReadNewVoltage" as the ADC driver awaits data-ready flag.
+            # but i measured it and a 0.060 sleep here reduces the data-ready await cycles (so less I2C commands), which felt better?
             time.sleep(0.060)
             #pront("Done sleep")
 
             #pront("Sampling... %s"%(img_path))
             #sample = board.ADCReadVoltage()						                    	# OPTION: SINGLE SAMPLE
             #sample = board.ADCReadVoltageAverage(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL)		# OPTION: Average
-            sample = self.board.ADCReadNewVoltage()	                                        	# OPTION: Await new data (single sample)
+            [volts,clip] = self.board.ADCReadNewVoltage()	                                        	# OPTION: Await new data (single sample).Dont really need to sleep with this option
             #pront('  level=%0.4f %s'%(sample, img_path[-10:]))
-            output0.append(sample)
+            output0.append(volts)
+            # Report clipping if it happensr, flag the image as clipped
+            if clip == +1 and not(clipped & 2): clipped = clipped | 2
+            if clip == -1 and not(clipped & 1): clipped = clipped | 1
+ 
 
-        
-        self.dark()
         tEnd = time.time()
+        self.dark()
 
         # === Cleanup
         # get overall stats, mean of all voltage sample stdvs, and the stdev of that mean. Indicates how noisy the signal was.
@@ -154,8 +160,9 @@ class PiImageCapture:
                                                   
         stats = 'Resol:%dx%d Pixel:%dx%d SPP:%d Wait:WR (mean wait:%0.4f s, stdev wait:%0.4f s) LVL-min:%0.4f max:%0.4f Took:%d s'%(self.N,self.N, self.S,self.S, SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
         #stats = '  samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))
+
         #print(output0)
-        await self.store.store(np.array(output0), (self.N,self.N), self.mask_type, title, stats)
+        await self.store.store(np.array(output0), (self.N,self.N), self.mask_type, title, stats, clipped)
         # np.savez(data_path, output0=output0)
 
         print(stats)

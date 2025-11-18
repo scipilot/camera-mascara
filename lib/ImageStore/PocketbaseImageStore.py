@@ -18,7 +18,8 @@ class PocketbaseImageStore:   # (ImageStore)
         self.connector = connector 
     
     # ouput is the image data array
-    async def store(self, output, dims, mask, title, stats):
+    # clipped is bit field: 1=low, 2=high, so 3 = both
+    async def store(self, output, dims, mask, title, stats, clipped):
         pb = await self.connector.connect()
         # Get the collection instance we can work with
         collection = pb.collection(COLLECTION_NAME)
@@ -43,11 +44,21 @@ class PocketbaseImageStore:   # (ImageStore)
                 "created": datetime.now(),
                 "title": title,
                 "stats": stats,
+                "clip": self.mapClip(clipped),
                 "mask": mask,
                 "data": FileUpload((f"{title}.npz", npz )),
                 "image": FileUpload((f"{title}.png", img )),
             }
         )
+
+    def mapClip(self, clippedField):
+        map = {
+            0: "no",
+            1: "lo",
+            2: "hi",
+            3: "both",
+        }
+        return map[clippedField & 3] 
 
     # once-off - set up the database structure
     async def setup(self):
