@@ -51,10 +51,10 @@ class PiImageCapture:
         self.store = store
 
         # Create a new board wrapper - note it has some settings which control the ADC chip config (sample speed etc)
-        pront("Connecting to the PiHat ...")
+        #pront("Connecting to the PiHat ...")
         self.board = PiHatSensor(I2CBUS)
         self.board.selfConfigure()
-        self.board.printConfig()
+        #self.board.printConfig()
 
         # set up PyGame
         pygame.init()
@@ -70,6 +70,9 @@ class PiImageCapture:
         pygame.display.flip()
         
     async def configure(self, image_size, mask_pixel_size, mask_type="point"):
+        # update the board config cache in case it the device has been reconfigured
+        self.board.selfConfigure()
+
         print(f"Image capture configure... {image_size}, {mask_pixel_size}, {mask_type}")
         self.N = image_size
         self.S = mask_pixel_size
@@ -101,6 +104,7 @@ class PiImageCapture:
         #samples = []
         output0 = [] 
         clipped = 0 # 2 bit field
+        self.board.resetStats()
        
         # swing low
         self.dark()
@@ -130,7 +134,7 @@ class PiImageCapture:
             # At 15SPS is 0.066s fastest possible case, so sleep for 60 as the code takes some time anyway (tune via the stats)
             # No sleep is technically needed when using "ReadNewVoltage" as the ADC driver awaits data-ready flag.
             # but i measured it and a 0.060 sleep here reduces the data-ready await cycles (so less I2C commands), which felt better?
-            time.sleep(0.060)
+            #time.sleep(0.060)
             #pront("Done sleep")
 
             #pront("Sampling... %s"%(img_path))
@@ -151,12 +155,13 @@ class PiImageCapture:
         # get overall stats, mean of all voltage sample stdvs, and the stdev of that mean. Indicates how noisy the signal was.
         #stdevs = board.getStdev()
         waitss = self.board.getWaits()
+        cs = self.board.getConfigStruct()
 
         ts = datetime.now().isoformat(sep='_', timespec='seconds') 
         if self.mask_type == "point":
-            title = f"PointScan_{ts}_{self.N}x{self.N}_{self.S}x{self.S}_WR_{SAMPLES_PER_PIXEL}SPP"
+            title = f"PointScan_{ts}_{self.N}x{self.N}_{self.S}x{self.S}_WR_{SAMPLES_PER_PIXEL}SPP_{cs.PGA_value}PGA_{cs.SPS_value}SPS"
         elif self.mask_type == "fourier":
-            title = f"Fourier_{ts}_{self.N}x{self.N}__WR_{SAMPLES_PER_PIXEL}SPP"
+            title = f"Fourier_{ts}_{self.N}x{self.N}__WR_{SAMPLES_PER_PIXEL}SPP_{cs.PGA_value}PGA_{cs.SPS_value}SPS"
                                                   
         stats = 'Resol:%dx%d Pixel:%dx%d SPP:%d Wait:WR (mean wait:%0.4f s, stdev wait:%0.4f s) LVL-min:%0.4f max:%0.4f Took:%d s'%(self.N,self.N, self.S,self.S, SAMPLES_PER_PIXEL, waitss[1], waitss[2], np.min(output0), np.max(output0), tEnd-tStart)
         #stats = '  samples/pixel:%d interval:%.4f s (mean*stdev:%0.4f, stdev*stdev:%0.4f) min:%0.4f max:%0.4f took:%d s'%(SAMPLES_PER_PIXEL, SAMPLE_INTERVAL, stdevs[0], stdevs[1], np.min(output0), np.max(output0), tEnd-tStart))

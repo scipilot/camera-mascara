@@ -109,6 +109,10 @@ class PiHatSensor:
         self.min = 0
         self.max = 0
 
+    def resetStats(self):
+        self.stdevs = []
+        self.waits = []
+                   
     def selfConfigure(self):
         """Configures this object instance parameters from the ADC chip config"""
         cs = self.ADCReadConfigStruct()
@@ -135,6 +139,9 @@ class PiHatSensor:
 
     def getConfig(self):
         return [self.PGA, MIN_CODE, MAX_V, VIN_NEG, self.DR]
+
+    def getConfigStruct(self):
+        return ConfigStruct(PGA=self.PGA, PGA_value=PGA_VALUES[self.PGA], SPS=self.DR, SPS_value=DR_VALUES[self.DR])
 
     def printConfig(self):
         print(f"PGA={self.PGA}, MIN_CODE={MIN_CODE}, MAX_V={MAX_V}, VIN_NEG={VIN_NEG}, DR={self.DR}")

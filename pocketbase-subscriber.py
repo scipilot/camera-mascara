@@ -22,6 +22,9 @@ from lib.Meters.PocketbaseBrightnessMeter import  PocketbaseBrightnessMeter
 from lib.ConfigStore.PocketbaseConfigStore import PocketbaseConfigStore
 from lib.PiConfig import PiConfig
 
+# TODO NOTE each service has its own PiHATSensorBoard so they have to refresh their own config.
+# IT MIGHT be better to inject one so it stays in sync?
+
 connector = Connector()
 
 # Storage Strategy 1 - save data in NPZ file
