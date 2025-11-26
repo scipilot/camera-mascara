@@ -20,7 +20,7 @@ class ImageRender:
         image0 = output.reshape(dims)
         
         # === Rescale brightness levels  (normalise)
-        print("min:%f, max:%f" % (np.min(image0), np.max(image0)))
+        print("min:%f, max:%f" % (np.min(image0), np.max(image0)), flush=True)
         img_norm = image0 - np.min(image0)            # Subtract min
         if np.max(img_norm) > 0:  img_norm = img_norm / np.max(img_norm)        # Divide by normalised max
         img_uint8 = (img_norm * 255).astype(np.uint8) # Scale and convert to uint8

@@ -4,7 +4,7 @@
 # or running the light-meter and updating the corresponding device record.
 # Most of these functions have manual scripts too, but this is the "lights-out" wrapper service.
 
-print("Pocketbase subscriber is starting...")
+print("Pocketbase subscriber is starting...", flush=True)
 import asyncio
 import os
 from datetime import datetime
@@ -71,7 +71,7 @@ async def callback(event: RealtimeEvent) -> None:
     global pb
     # This will get called for every event
     at = datetime.now().isoformat()
-    print(f"[{at}] {event['action'].upper()}: {event['record']}")
+    print(f"[{at}] {event['action'].upper()}: {event['record']}", flush=True)
     # onky service "requests" as the record is updated by the job itself (and would recurse!)
     if event['record']['state'] == 'requested':
         if event['record']['job'] == 'capture':
@@ -83,18 +83,18 @@ async def callback(event: RealtimeEvent) -> None:
         elif event['record']['job'] == 'adc.config.write':
             await handleADCConfigWrite(event, pb)
         else:
-            print(f"Unknown job { event['record']['job'] }")
+            print(f"ERROR: Unknown job { event['record']['job'] }", flush=True)
 
 async def handleCapture(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']} for {event['record']['camera']}")
-    await pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'], mask_type=event["record"]["mask_type"])
+    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']} {event['record']['mask_point_shape']} for {event['record']['camera']}", flush=True)
+    await pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'], mask_pixel_scan=event['record']['mask_point_shape'], mask_type=event["record"]["mask_type"])
     await update_job(event, "running", pb)
     await pic.run()
     await update_job(event, "ended", pb)
 
 
 async def handleMeter(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the meter for {event['record']['camera']}")
+    print(f"Pocketbase subscriber is running the meter for {event['record']['camera']}", flush=True)
     #await update_job(event, "starting")
     await plm.configure(device=event["record"]["camera"])
     await update_job(event, "running", pb)
@@ -102,13 +102,13 @@ async def handleMeter(event: RealtimeEvent, pb) -> None:
     await update_job(event, "ended", pb)
 
 async def handleADCConfigRead(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the handleADCConfigRead for {event['record']['camera']}")
+    print(f"Pocketbase subscriber is running the handleADCConfigRead for {event['record']['camera']}", flush=True)
     await update_job(event, "running", pb)
     await pc.read(device=event["record"]["camera"])
     await update_job(event, "ended", pb)
 
 async def handleADCConfigWrite(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the handleADCConfigWrite for {event['record']['camera']}")
+    print(f"Pocketbase subscriber is running the handleADCConfigWrite for {event['record']['camera']}", flush=True)
     await update_job(event, "running", pb)
     await pc.write(device=event["record"]["camera"], pga_value=event["record"]["pga"], sps_value=event["record"]["sps"])
     await update_job(event, "ended", pb)
@@ -147,14 +147,14 @@ async def realtime_updates():
         # Subscribe to Realtime events for the specific record ID in the collection
         unsubscribe = await col.subscribe_all(callback=callback)
 
-        print("Pocketbase subscriber is ready")
+        print("Pocketbase subscriber is ready", flush=True)
 
         # Infinite loop to wait for events (adjusted from the second snippet)
         while True:
             await asyncio.sleep(60 * 60)  # Sleep for an hour to avoid hitting PocketBase's rate limits")
 
     except Exception as e:
-        print(f"Error in Pocketbase subscriber: {e}")
+        print(f"Error in Pocketbase subscriber: {e}", flush=True)
 
     finally:
         # Unsubscribe if still active
@@ -162,8 +162,9 @@ async def realtime_updates():
             try:
                 await unsubscribe()
             except Exception as e:
-                print(f"Error in Pocketbase subscriber: unsubscribing: {e}")
+                print(f"Error in Pocketbase subscriber: unsubscribing: {e}", flush=True)
 
 
 if __name__ == "__main__":
     asyncio.run(realtime_updates())
+

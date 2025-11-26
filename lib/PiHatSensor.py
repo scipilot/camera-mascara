@@ -144,7 +144,7 @@ class PiHatSensor:
         return ConfigStruct(PGA=self.PGA, PGA_value=PGA_VALUES[self.PGA], SPS=self.DR, SPS_value=DR_VALUES[self.DR])
 
     def printConfig(self):
-        print(f"PGA={self.PGA}, MIN_CODE={MIN_CODE}, MAX_V={MAX_V}, VIN_NEG={VIN_NEG}, DR={self.DR}")
+        print(f"PGA={self.PGA}, MIN_CODE={MIN_CODE}, MAX_V={MAX_V}, VIN_NEG={VIN_NEG}, DR={self.DR}", flush=True)
 
     def ADCReadVoltageAverage(self, no_samples, interval):
         samples = []
@@ -196,7 +196,7 @@ class PiHatSensor:
         conf = self.ADCReadConfig()
         PGA = conf & CFM_PGA
         DR = conf & CFM_DR
-        print("read conf byte 0x%x %d PGA=#%d DR=#%d"%(conf, conf, PGA, DR))
+        #print("read conf byte 0x%x %d PGA=#%d DR=#%d"%(conf, conf, PGA, DR))
         return ConfigStruct(PGA=PGA, PGA_value=PGA_VALUES[PGA], SPS=DR, SPS_value=DR_VALUES[DR])
 
     #def ADCWriteConfig(self):
@@ -210,7 +210,7 @@ class PiHatSensor:
         self.PGA = PGA_OPTIONS[PGA_value]
         self.DR = DR_OPTIONS[SPS_value]
         conf = self.PGA | self.DR | SC
-        print(f"write PGA={self.PGA} DR={self.DR} SC={SC} conf={conf:02x}H")
+        #print(f"write PGA={self.PGA} DR={self.DR} SC={SC} conf={conf:02x}H")
         self.bus.write_byte(addr, conf)
 
     def shutdown(self):

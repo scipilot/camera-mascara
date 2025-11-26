@@ -41,7 +41,7 @@ class PiLightMeter:
         self.device = device
         
     async def run(self):
-        print("LIGHT METER...")
+        print("LIGHT METER...", flush=True)
         await self.meter.init()
         tStart = time.time()
 

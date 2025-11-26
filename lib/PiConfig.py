@@ -32,16 +32,16 @@ class PiConfig:
         self.store = store
 
         # Create a new board wrapper 
-        print("Connecting to the PiHat ...")
+        print("Connecting to the PiHat ...", flush=True)
         self.board = PiHatSensor(I2CBUS)
 
     async def read(self, device):
         cs:ConfigStruct = self.board.ADCReadConfigStruct() 
-        print(f"PiConfig fetched config for {device}: {cs}")
+        print(f"PiConfig fetched config for {device}: {cs}", flush=True)
         await self.store.store(device, cs.PGA_value, cs.SPS_value)
 
     async def write(self, device, pga_value, sps_value):
-        print(f"PI configure: {device}, {pga_value}, {sps_value}")
+        print(f"PI configure: {device}, {pga_value}, {sps_value}", flush=True)
         #device = await self.store.fetch(ID, cs.PGA_value, cs.SPS_value), 
         self.board.ADCWriteConfigValues(PGA_value=pga_value, SPS_value=sps_value) 
         await self.store.store(device, pga_value, sps_value)
