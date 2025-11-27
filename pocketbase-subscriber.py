@@ -86,8 +86,8 @@ async def callback(event: RealtimeEvent) -> None:
             print(f"ERROR: Unknown job { event['record']['job'] }", flush=True)
 
 async def handleCapture(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_pixel_size']} {event['record']['mask_point_shape']} for {event['record']['camera']}", flush=True)
-    await pic.configure(image_size=event['record']['image_size'], mask_pixel_size=event['record']['mask_pixel_size'], mask_pixel_scan=event['record']['mask_point_shape'], mask_type=event["record"]["mask_type"])
+    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_point_size']} {event['record']['mask_point_shape']} for {event['record']['camera']}", flush=True)
+    await pic.configure(image_size=event['record']['image_size'], mask_point_size=event['record']['mask_point_size'], mask_point_shape=event['record']['mask_point_shape'], mask_type=event["record"]["mask_type"])
     await update_job(event, "running", pb)
     await pic.run()
     await update_job(event, "ended", pb)

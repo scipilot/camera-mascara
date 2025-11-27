@@ -69,17 +69,17 @@ class PiImageCapture:
         self.screen.blit(surface,(border,border))
         pygame.display.flip()
         
-    async def configure(self, image_size, mask_pixel_size, mask_point_shape, mask_type="point"):
+    async def configure(self, image_size, mask_point_size, mask_point_shape, mask_type="point"):
         # update the board config cache in case it the device has been reconfigured
         self.board.selfConfigure()
 
-        print(f"Image capture configure... {image_size}, {mask_point_shape}, {mask_pixel_scan}, {mask_type}", flush=True)
+        print(f"Image capture configure... {image_size=}, {mask_point_size=}, {mask_point_shape=}, {mask_type=}", flush=True)
         self.N = image_size
-        self.PS = mask_pixel_scan
+        self.S = mask_point_size
         self.mask_point_shape = mask_point_shape
         self.mask_type = mask_type
         if mask_type == "point":
-            self.folder_path = f'{base_path}/patterns/PixelScan_{self.S}x{self.S}_{self.N}x{self.PS}_{self.mask_point_shape}'
+            self.folder_path = f'{base_path}/patterns/PointScan_{self.S}x{self.S}_{self.N}x{self.N}_{self.mask_point_shape}'
         elif mask_type == "fourier":
             self.folder_path = f'{base_path}/patterns/fourier_p4_{self.N}'
         else:
