@@ -11,14 +11,15 @@ import os
 import math
 
 # Parameters
-M = 32 # number of pixels to scan
-R = 32 # Overall size of image
-S =  3  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res. An odd number is better for gaussian.
+M = 16 # number of pixels to scan
+R = 16 # Overall size of image
+S =  5  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res. An odd number is better for gaussian.
 # Point shape: 'square' | 'gaussian'
 shape = 'gaussian'
 # Gaussian sig: It seems the "sig" parameter needs to be increased with the general size of the image/point.
 # Good settings:          64+9: 2, 64+15: 3, 64+33:3, @S=100: 3
 #     32+3: 1, 32+5: 1.3, 32+9: 2, 32+15: 3
+#     32+3: 1, 16+5: 1
 SIG=1
 
 file_dir = "patterns/PointScan_%dx%d_%d_%s/" % (M,R,S,shape) # where to save images
