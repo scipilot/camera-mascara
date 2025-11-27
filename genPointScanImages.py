@@ -13,9 +13,14 @@ import math
 # Parameters
 M = 64 # number of pixels to scan
 R = 64 # Overall size of image
-S = 31  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res. An odd number is better for gaussian.
-shape = 'gaussian' # 'square' | 'gaussian'
-file_dir = "patterns/PointScan_%dx%d_%dx%d_%s/" % (S,S,M,R,shape) # where to save images
+S = 33  # size of square that is scanned. NOTE: this should be proportional to the resolution, else it's darker at higher res. An odd number is better for gaussian.
+# Point shape: 'square' | 'gaussian'
+shape = 'gaussian'
+# Gaussian sig: It seems the "sig" parameter needs to be increased with the general size of the image/point.
+# Good settings: 64+9: 2, 64+15: 3, 64+33:3, @S=100: 3
+SIG=3
+
+file_dir = "patterns/PointScan_%dx%d_%d_%s/" % (M,R,S,shape) # where to save images
 
 # Ensure the output directory exists
 os.makedirs(file_dir, exist_ok=True)
@@ -44,9 +49,7 @@ def gkernel(l=3, sig=2):
     return kernel / np.sum(kernel)
 
 if shape == 'gaussian':
-    # it seems the "sig" parameter needs to be increased slightly with the general size of the image/point.
-    # Good settings:- S=9: 1, S=100: 3,
-    gaussian_2d = gkernel(S, 2)
+    gaussian_2d = gkernel(S, SIG)
     gaussian_2d = gaussian_2d * 255 / np.max(gaussian_2d)
     #print(gaussian_2d)
     mofl = -int(np.floor(S/2))
