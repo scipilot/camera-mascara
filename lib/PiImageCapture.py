@@ -79,7 +79,7 @@ class PiImageCapture:
         self.mask_point_shape = mask_point_shape
         self.mask_type = mask_type
         if mask_type == "point":
-            self.folder_path = f'{base_path}/patterns/PointScan_{self.S}x{self.S}_{self.N}x{self.N}_{self.mask_point_shape}'
+            self.folder_path = f'{base_path}/patterns/PointScan_{self.N}x{self.N}_{self.S}_{self.mask_point_shape}'
         elif mask_type == "fourier":
             self.folder_path = f'{base_path}/patterns/fourier_p4_{self.N}'
         else:
