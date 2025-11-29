@@ -29,7 +29,7 @@ class ImageRender:
         fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
         # == Write out the PNG
-        plt.imsave(file, img_uint8)
+        plt.imsave(file, img_uint8, cmap="grey")
 
     def render_fourier(self, output, dims, file):
         N = dims[0]
@@ -72,5 +72,5 @@ class ImageRender:
         Ri = (Ri / np.max(Ri) * 255).astype(np.uint8)
 
         # Save the image
-        plt.imsave(file, Image.fromarray(Ri))
+        plt.imsave(file, Image.fromarray(Ri), cmap="grey")
 
