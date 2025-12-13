@@ -3,6 +3,11 @@
 # taking a photo at the specified resolution and saving the resulting image in the database.
 # or running the light-meter and updating the corresponding device record.
 # Most of these functions have manual scripts too, but this is the "lights-out" wrapper service.
+#
+# the API is: POST a Job with "requested" and it will start processing
+#           Cancel the job, but PUTTING the same job( ID and state) with "cancel" state
+#           poll the Job state and related Job.Camera state
+#           Query the result, e.g. images
 
 print("Pocketbase subscriber is starting...", flush=True)
 import asyncio
@@ -61,19 +66,35 @@ if SUPERUSER_EMAIL == "": raise SystemExit("POCKETBASE_SUPERUSER_EMAIL environme
 if SUPERUSER_PASSWORD == "": raise SystemExit("POCKETBASE_SUPERUSER_PASSWORD environment variable not set!")
 
 
-pb = None 
+pb = None
 
-async def callback(event: RealtimeEvent) -> None:
+# Singleton Job cache for cancellation
+jobId = None
+jobState = None
+jobCancel = False
+
+async def callbackRouter(event: RealtimeEvent) -> None:
+    if event['record']['state'] == 'requested':
+        await callbackRequest(event)
+    elif event['record']['state'] == 'cancel':
+        await callbackCacnel(request)
+
+# This will get called for every job event
+async def callbackRequest(event: RealtimeEvent) -> None:
     """Callback function for handling Realtime events.
     Args:
         event (RealtimeEvent): The event object containing information about the record change.
     """
-    global pb
-    # This will get called for every event
+    global pb, jobId
     at = datetime.now().isoformat()
-    print(f"[{at}] {event['action'].upper()}: {event['record']}", flush=True)
-    # onky service "requests" as the record is updated by the job itself (and would recurse!)
+    print(f"CB REQUEST [{at}] {event['action'].upper()}: {event['record']}", flush=True)
+    # only service "request" or "abort" as the record is updated by the job itself (and would recurse!)
     if event['record']['state'] == 'requested':
+        if jobId != None:
+            # don't allow concurrent jobs
+            print(f"ERROR: Job is already running. Cannot start job:{ event['record']['job'] }", flush=True)
+            return
+
         if event['record']['job'] == 'capture':
             await handleCapture(event, pb)
         elif event['record']['job'] == 'meter':
@@ -85,16 +106,41 @@ async def callback(event: RealtimeEvent) -> None:
         else:
             print(f"ERROR: Unknown job { event['record']['job'] }", flush=True)
 
+async def callbackCancel(event: RealtimeEvent) -> None:
+    global jobId
+    at = datetime.now().isoformat()
+    print(f"CB CANCEL [{at}] {event['action'].upper()}: {event['record']}", flush=True)
+    if event['record']['state'] == 'cancel':
+        if jobId != None:
+            await handleCancel(event, pb)
+        else:
+            print(f"WARNING: No Job is running. Cannot cancel job:{ event['record']['job'] }", flush=True)
+            return
+
+async def handleCancel(event: RealtimeEvent, pb) -> None:
+    print(f"handleCancel")
+    global jobCancel
+    # if there's a cancellable job running, flag it for stoppage
+    if jobId != None:
+            jobCancel = True
+
+def queryCancelCB():
+    global jobCancel
+    #print(f"queryCancelC{jobCancel=}")
+    return jobCancel
+
 async def handleCapture(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the image scan... {event['record']['image_size']} {event['record']['mask_point_size']} {event['record']['mask_point_shape']} for {event['record']['camera']}", flush=True)
+    print(f"Capture: running image scan... {event['record']['image_size']} {event['record']['mask_point_size']} {event['record']['mask_point_shape']} for {event['record']['camera']}", flush=True)
+    global jobCancel
     await pic.configure(image_size=event['record']['image_size'], mask_point_size=event['record']['mask_point_size'], mask_point_shape=event['record']['mask_point_shape'], mask_type=event["record"]["mask_type"])
+    jobCancel = False
     await update_job(event, "running", pb)
-    await pic.run()
+    await pic.run(queryCancelCB)
     await update_job(event, "ended", pb)
 
 
 async def handleMeter(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the meter for {event['record']['camera']}", flush=True)
+    print(f"Running the meter for {event['record']['camera']}", flush=True)
     #await update_job(event, "starting")
     await plm.configure(device=event["record"]["camera"])
     await update_job(event, "running", pb)
@@ -102,19 +148,25 @@ async def handleMeter(event: RealtimeEvent, pb) -> None:
     await update_job(event, "ended", pb)
 
 async def handleADCConfigRead(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the handleADCConfigRead for {event['record']['camera']}", flush=True)
+    print(f"Running ADCConfigRead for {event['record']['camera']}", flush=True)
     await update_job(event, "running", pb)
     await pc.read(device=event["record"]["camera"])
     await update_job(event, "ended", pb)
 
 async def handleADCConfigWrite(event: RealtimeEvent, pb) -> None:
-    print(f"Pocketbase subscriber is running the handleADCConfigWrite for {event['record']['camera']}", flush=True)
+    print(f"Running ADCConfigWrite for {event['record']['camera']}", flush=True)
     await update_job(event, "running", pb)
     await pc.write(device=event["record"]["camera"], pga_value=event["record"]["pga"], sps_value=event["record"]["sps"])
     await update_job(event, "ended", pb)
 
 
 async def update_job(event: RealtimeEvent, state, pb):
+    global jobId, jobState
+    # update local cache
+    jobId = event["record"]["id"]
+    jobState = state
+
+    # update database
     col = pb.collection(COLLECTION_NAME)
     updated = await col.update(record_id=event["record"]["id"], params={"state": state})
     # also update the client denormalisation
@@ -129,7 +181,7 @@ async def update_client(event: RealtimeEvent, state, pb):
     col = pb.collection("cameras")
     updated = await col.update(record_id=event["record"]["camera"], params={"job": setJob})
 
-async def realtime_updates():
+async def realtime_updates(callback):
     """Establishes a PocketBase connection, authenticates, and subscribes to Realtime events."""
     global pb
     unsubscribe = None
@@ -165,6 +217,13 @@ async def realtime_updates():
                 print(f"Error in Pocketbase subscriber: unsubscribing: {e}", flush=True)
 
 
+async def main():
+    # Run two parallel "threads" to allow jobs to be cancelled concurrently
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(realtime_updates(callbackRequest))
+        tg.create_task(realtime_updates(callbackCancel))
+
 if __name__ == "__main__":
-    asyncio.run(realtime_updates())
+    asyncio.run(main())
+
 

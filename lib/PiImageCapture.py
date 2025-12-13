@@ -9,6 +9,7 @@ import numpy as np
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from lib.PiHatSensor import PiHatSensor
+import asyncio
 
 # ====== DEFAULT SETTINGS ======
 #N = 16 # pixel w/h
@@ -100,7 +101,7 @@ class PiImageCapture:
         pygame.display.set_caption("Camera Mascara")
         pygame.mouse.set_visible(False)
 
-    async def run(self):
+    async def run(self, cancelled):
         print("Image capture starting...", flush=True)
         #samples = []
         output0 = [] 
@@ -115,6 +116,12 @@ class PiImageCapture:
         # Mask display synchronised loop
         for img_path in self.image_files:				# File option
         #for idx in range(1, num_images + 1):			# Generator option
+
+            # when run as a Task or coroutine, yield to allow other events to be handled. https://docs.python.org/3/library/asyncio-task.html#id7
+            await asyncio.sleep(0)
+            if cancelled():
+                print("CANCEL detected: quitting capture")
+                return 
 
             # Display next mask image (pixel)
             #pront(f"Displaying: {img_path}")
